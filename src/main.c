@@ -2,11 +2,15 @@
 #include <SDL_image.h>
 #include <stdio.h>
 
+#define FPS 60
+
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-
-
+int rot = 0;
+int targetTime = 1000 / FPS;
+int frameStartTime = 0;
+int delayTime = 0;
 
 int main( int argc, char* args[] )
 {
@@ -47,27 +51,47 @@ int main( int argc, char* args[] )
 	
 	while (running)
 	{
-		SDL_WaitEvent(&e);
-		
-		switch (e.type)
+		while (SDL_PollEvent(&e))
 		{
-			case SDL_QUIT:
+			if (e.type == SDL_QUIT)
+			{
 				running = 0;
-				break;
-			
-			case SDL_MOUSEBUTTONDOWN:
+			} else if (e.type == SDL_MOUSEBUTTONDOWN)
+			{
 				if (e.button.button == SDL_BUTTON_LEFT)
 				{
 
 				}
-	
-				break;
+			}	
 		}	
+		
+		rot++;
+		if (rot > 360) rot -= 360;
 
+	
 		SDL_RenderClear(ren);
-		SDL_RenderCopy(ren, tex, NULL, NULL);
+
+		SDL_Rect dst;
+		dst.x = 0;
+		dst.y = 0;
+		dst.w = 400;
+		dst.h = 50;
+		
+		SDL_Rect src;
+		src.x = 100;
+		src.y = 100;
+		src.w = 100;
+		src.h = 100;
+	
+	
+		SDL_RenderCopyEx(ren, tex, &src, &dst, rot, NULL, 0);
 		SDL_RenderPresent(ren);
 	
+		delayTime = targetTime - (SDL_GetTicks() - frameStartTime);
+		if (delayTime > 0)
+			SDL_Delay(delayTime);
+
+		frameStartTime = SDL_GetTicks();
 	}
 	
 	SDL_DestroyTexture(tex);

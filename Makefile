@@ -1,16 +1,19 @@
 CC = gcc
-# If your compiler is a bit older you may need to change -std=c++11 to -std=c++0x
+
 CFLAGS = -Wall -c -I /Library/Frameworks/SDL2.framework/Headers
 LDFLAGS = -framework SDL2
-EXE = game
+EXE = bin/game
+SRC = src
+CFILES = $(wildcard $(SRC)/*.c)
+OFILES = $(wildcard $(SRC)/*.o)
 
 all: $(EXE)
 
-$(EXE): main.o
+$(EXE): $(SRC)/game.o
 	$(CC) $(LDFLAGS) $< -o $@
 
-main.o: main.c
+$(SRC)/game.o: $(CFILES)
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm *.o && rm $(EXE)
+	rm $(OFILES) && rm $(EXE)

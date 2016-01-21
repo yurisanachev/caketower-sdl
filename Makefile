@@ -1,7 +1,7 @@
 CC = gcc
 
-CFLAGS = -Wall -c -I /Library/Frameworks/SDL2.framework/Headers
-LDFLAGS = -framework SDL2
+CFLAGS = -Wall -c -I /Library/Frameworks/SDL2.framework/Headers -I /Library/Frameworks/SDL2_image.framework/Headers
+LDFLAGS = -framework SDL2 -framework SDL2_image
 EXE = bin/game
 SRC = src
 CFILES = $(wildcard $(SRC)/*.c)

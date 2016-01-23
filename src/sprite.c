@@ -1,9 +1,14 @@
 #include "sprite.h"
 #include "assets.h"
+#include <stdio.h>
+#include "engine.h"
 
 void sprite_free(sprite* s)
 {
     s->tex = NULL;
+	s->onMouseDown = NULL;
+	s->onMouseUp = NULL;
+	s->onClick = NULL;
     free(s);
 }
 
@@ -23,19 +28,65 @@ sprite* sprite_create(char* name, int frames)
 
 	s->width /= frames;
 
+	s->onMouseDown = NULL;
+	s->onMouseUp = NULL;
+	s->onClick = NULL;
+
     return s;
+}
+
+void sprite_setPosition(sprite* s, int x, int y)
+{
+	s->x = x;
+	s->y = y;
 }
 
 void sprite_handleMouse(sprite* s, SDL_Event* e)
 {
+	// mouse
+	SDL_Rect m;
+	SDL_GetMouseState(&m.x, &m.y);
+	
+	m.w = 1;
+	m.h = 1;
+
+	SDL_Rect aabb;
+	aabb.x = s->x - s->width / 2;
+	aabb.y = s->y - s->height / 2; 
+	aabb.w = s->width;
+	aabb.h = s->height;
+
+
+	int inside = SDL_HasIntersection(&m, &aabb);
+
 	switch (e->type)
 	{
-		case 1:
+		case SDL_MOUSEBUTTONDOWN:
+			if (inside)
+			{
+				// handle onMouseDown
+				if (s->onMouseDown != NULL) s->onMouseDown(s);
+				s->mouseDown = 1;
+			}	
+			break;
+		
+		case SDL_MOUSEBUTTONUP:
+			if (inside && s->mouseDown)
+			{
+				// click
+				if (s->onClick != NULL) s->onClick(s);
+			}
+			if (s->mouseDown)
+			{
+				// reset
+				if (s->onMouseUp != NULL) s->onMouseUp(s);
+				s->mouseDown = 0;
+			}
 			break;
 	}	
 }
 
-void sprite_draw(sprite* s, SDL_Renderer* ren)
+void sprite_draw(sprite* s)
 {
         SDL_Rect dst;
         dst.w = s->width * s->scaleX;

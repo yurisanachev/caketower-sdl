@@ -4,16 +4,15 @@ CFLAGS = -Wall -c -I /Library/Frameworks/SDL2.framework/Headers -I /Library/Fram
 LDFLAGS = -framework SDL2 -framework SDL2_image
 EXE = bin/game
 SRC = src
-CFILES = $(wildcard $(SRC)/*.c)
-OFILES = $(wildcard $(SRC)/*.o)
+OFILES = $(patsubst %.c,%.o,$(wildcard $(SRC)/*.c)) 
 
 all: $(EXE)
 
-$(EXE): $(SRC)/game.o
-	$(CC) $(LDFLAGS) $< -o $@
+$(EXE): $(OFILES)
+	$(CC) $(LDFLAGS) $^ -o $@
 
-$(SRC)/game.o: $(CFILES)
-	$(CC) $(CFLAGS) $< -o $@
+$(SRC)/%.o: $(SRC)/%.c
+	$(CC) $(CFLAGS) $^ -o $@
 
 clean:
-	rm $(OFILES) && rm $(EXE)
+	rm $(SRC)/*.o && rm $(EXE)

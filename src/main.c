@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <stdio.h>
+#include "assets.h"
 
 #define FPS 60
 
@@ -35,16 +36,11 @@ int main( int argc, char* args[] )
 							SCREEN_WIDTH, 
 							SCREEN_HEIGHT, 
 							SDL_WINDOW_SHOWN);
-	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
 
-	SDL_Texture *tex = IMG_LoadTexture(ren, "../assets/baker.png");	
+	assets_loadTexture("baker", "../assets/baker.png", ren);
 
-	/*for (int i = 0; i < 10; i++)
-	{
-			SDL_Delay(500);
-	}*/	
-		
 	SDL_Event e;
 	
 	int running = 1;
@@ -71,20 +67,6 @@ int main( int argc, char* args[] )
 	
 		SDL_RenderClear(ren);
 
-		SDL_Rect dst;
-		dst.x = 0;
-		dst.y = 0;
-		dst.w = 400;
-		dst.h = 50;
-		
-		SDL_Rect src;
-		src.x = 100;
-		src.y = 100;
-		src.w = 100;
-		src.h = 100;
-	
-	
-		SDL_RenderCopyEx(ren, tex, &src, &dst, rot, NULL, 0);
 		SDL_RenderPresent(ren);
 	
 		delayTime = targetTime - (SDL_GetTicks() - frameStartTime);
@@ -94,7 +76,6 @@ int main( int argc, char* args[] )
 		frameStartTime = SDL_GetTicks();
 	}
 	
-	SDL_DestroyTexture(tex);
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow( window );
 	SDL_Quit();

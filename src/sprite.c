@@ -1,4 +1,5 @@
 #include "sprite.h"
+#include "assets.h"
 
 void sprite_free(sprite* s)
 {
@@ -6,7 +7,7 @@ void sprite_free(sprite* s)
     free(s);
 }
 
-sprite* sprite_create()
+sprite* sprite_create(char* name, int frames)
 {
     sprite* s = (sprite*)malloc(sizeof(sprite));
 
@@ -16,19 +17,32 @@ sprite* sprite_create()
     s->scaleY = 1;
     s->rotation = 0;
     s->currentFrame = 1;
-    //s->tex = assets_getTexture();
+	s->mouseDown = 0;
+    s->tex = assets_getTexture(name);
+	SDL_QueryTexture(s->tex, NULL, NULL, &(s->width), &(s->height));
+
+	s->width /= frames;
 
     return s;
+}
+
+void sprite_handleMouse(sprite* s, SDL_Event* e)
+{
+	switch (e->type)
+	{
+		case 1:
+			break;
+	}	
 }
 
 void sprite_draw(sprite* s, SDL_Renderer* ren)
 {
         SDL_Rect dst;
-        dst.x = s->x;
-        dst.y = s->y;
         dst.w = s->width * s->scaleX;
         dst.h = s->height * s->scaleY;
-
+		dst.x = s->x - dst.w / 2;
+        dst.y = s->y - dst.h / 2;
+        
         SDL_Rect src;
         src.x = s->width * (s->currentFrame - 1);
         src.y = 0;

@@ -13,6 +13,7 @@ typedef struct {
 	double rotation;
 	int currentFrame;
 	int mouseDown;
+	int mouseEnabled;
 	SDL_Texture* tex;
 
 	// event handlers
@@ -24,7 +25,7 @@ typedef struct {
 void sprite_free(sprite* s);
 sprite* sprite_create();
 void sprite_draw(sprite* s);
-void sprite_handleMouse(sprite* s, SDL_Event* e);
+int sprite_handleMouse(sprite* s, SDL_Event* e);
 void sprite_setPosition(sprite* s, int x, int y);
 
 

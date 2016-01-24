@@ -83,12 +83,12 @@ void* list_get(list_t* head, int id)
 
 void list_free(list_t** head)
 {
-	list_t* it;
-	while (*head)
+	list_t* it = *head;
+	while (it)
 	{
-		it = (*head)->next;
-		free(*head);
-		(*head) = it;
+		list_t* temp = it->next;
+		free(it);
+		it = temp;
 	}
 	*head = NULL;
 }

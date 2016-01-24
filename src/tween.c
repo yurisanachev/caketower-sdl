@@ -9,7 +9,9 @@ void tween_create(sprite* obj,
 		double dSY, 
 		double dR,
 		int time,
-		double (*easing)(double))
+		int delay,
+		double (*easing)(double),
+		void (*onComplete)())
 {
 	tween* t = (tween*)malloc(sizeof(tween));	
 	
@@ -25,13 +27,16 @@ void tween_create(sprite* obj,
 	t->dScaleY = dSY - t->sScaleY;
 	t->dRotation = dR - t->sRotation;
 	
-
-	t->time = time;
+	// magic 0.9
+	t->delay = delay / (1000 / 60) * 0.9;
+	t->time = time / (1000 / 60) * 0.9;
 	t->elapsed = 0;
 	t->obj = obj;
 	
 	t->easing = NULL;
 	t->easing = easing;	
+
+	t->onComplete = onComplete;
 
 	list_add_back(&tweens, (void*)t);
 }
@@ -40,27 +45,36 @@ void tween_update(tween* t)
 {
 	if (t->obj == NULL || t->elapsed == t->time)
 	{
+		if (t->onComplete != NULL) t->onComplete(); 
+	
 		list_remove(&tweens, t);
 		tween_destroy(t);
 
 		return;
 	}
 	
-	t->elapsed++;
-	
-	double delta = 1.0 * t->elapsed / t->time;
-	
-	if (t->easing != NULL) delta = t->easing(delta);
-	
-	sprite_setPosition(t->obj, t->sx + delta * t->dx, t->sy + delta * t->dy);	
-	t->obj->scaleX = t->sScaleX + delta * t->dScaleX; 
-	t->obj->scaleY = t->sScaleY + delta * t->dScaleY; 
-	t->obj->rotation = t->sRotation + delta * t->dRotation; 
-	
+	if (t->delay > 0) 
+	{
+		t->delay--;
+	} else {
+		t->elapsed++;	
+		
+		double delta = 1.0 * t->elapsed / t->time;
+		
+		if (t->easing != NULL) delta = t->easing(delta);
+		
+		sprite_setPosition(t->obj, t->sx + delta * t->dx, t->sy + delta * t->dy);	
+		t->obj->scaleX = t->sScaleX + delta * t->dScaleX; 
+		t->obj->scaleY = t->sScaleY + delta * t->dScaleY; 
+		t->obj->rotation = t->sRotation + delta * t->dRotation; 
+	}
 }
 
 void tween_destroy(tween* t)
 {
 	t->obj = NULL;
+	t->easing = NULL;
+	t->onComplete = NULL;
+
 	free(t);
 }

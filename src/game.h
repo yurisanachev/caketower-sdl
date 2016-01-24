@@ -3,11 +3,13 @@
 
 #include <SDL.h>
 #include "sprite.h"
-
+#include "list.h"
 
 // buttons
 typedef struct {
 	sprite* play;
+	sprite* exit;
+	sprite* about;
 } game_buttons;
 
 extern game_buttons* b;
@@ -17,13 +19,50 @@ extern game_buttons* b;
 typedef struct {
 	sprite* bg1;
 	sprite* bg2;
+	sprite* baker;
+	sprite* plate;
+	sprite* logo;
+	sprite* table;
+
+	sprite* arm;	
+	sprite* gameover;
+	sprite* aboutScreen;
+	sprite* timeup;
 } game_environment;
 
 extern game_environment* env;
 
+// game vars
+typedef struct {
+	int playing;
+	int gameOver;
+	int falling;
+	int score;
+	int speed;
+	int dir;
+	int lastCakeY;
+
+	list_t* cakesToDrop;
+	list_t* cakes; 
+} game;
+
+extern game* g;
+
+void game_showMenu();
+void game_hideMenu();
+
+void game_showGame();
+void game_startGame();
+void game_finishGame();
+void game_hideGame();
+
+void game_reset();
+
+void game_makeNewCake();
+void game_dropCake();
 
 void game_init();
-void game_draw();
+void game_update();
 void game_free();
 int game_handleEvent(SDL_Event* e);
 #endif

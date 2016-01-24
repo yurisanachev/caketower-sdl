@@ -10,6 +10,8 @@
 void callback_startGameFromMenu(void* s)
 {
 	// do smth
+	game_hideMenu();
+	game_showGame();
 }
 
 void callback_buttonUpDefault(void* s)
@@ -17,7 +19,7 @@ void callback_buttonUpDefault(void* s)
 	sprite* sp = (sprite*)s;
 
 	sp->currentFrame = 1;
-	tween_create(sp, sp->x, sp->y, 1, 1, 0, 50, &elasticOut);
+	//tween_create(sp, sp->x, sp->y, 1, 1, 0, 500, 0, &elasticOut, NULL);
 }
 
 
@@ -26,7 +28,7 @@ void callback_buttonDownDefault(void* s)
 	sprite* sp = (sprite*)s;
 	
 	sp->currentFrame = 2;
-	tween_create(sp, sp->x, sp->y, 1.5, 1.5, 15, 50, &elasticOut);
+	//tween_create(sp, sp->x, sp->y, 1.5, 1.5, 15, 500, 0, &elasticOut, NULL);
 }
 
 #endif

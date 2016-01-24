@@ -17,9 +17,11 @@ typedef struct {
 	double sScaleY;
 	double sRotation;
 	int time;
+	int delay;
 	int elapsed;
 	sprite* obj;
 	double (*easing)(double);
+	void (*onComplete)();
 } tween;
 
 extern list_t* tweens;
@@ -31,7 +33,9 @@ void tween_create(sprite* obj,
 		double dSY, 
 		double dR, 
 		int time,
-		double (*easing)(double));
+		int delay,
+		double (*easing)(double),
+		void (*onComplete)());
 
 void tween_update(tween* t);
 void tween_destroy(tween* t);

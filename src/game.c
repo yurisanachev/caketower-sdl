@@ -5,52 +5,298 @@
 
 game_buttons* b = NULL;
 game_environment* env = NULL;
+game* g = NULL;
 
+void game_reset()
+{
+	g->playing = 0;
+	g->gameOver = 0;
+	g->falling = 0;
+	g->score = 0;
+	g->speed = 5;
+	g->dir = 1;
+	g->lastCakeY = 630;
+
+	// clear all cakes to drop
+	list_t* it = g->cakesToDrop;
+	
+	while (it)
+	{	
+		sprite_free((sprite*)(it->value));
+		it = it->next;
+	}
+
+	list_free(&(g->cakesToDrop));	
+
+
+	// clear all other cakes
+	it = g->cakes;
+	
+	while (it)
+	{	
+		sprite_free((sprite*)(it->value));
+		it = it->next;
+	}
+
+	list_free(&(g->cakes));
+	
+}
 
 void game_init()
 {
 	// create containers
 	b = (game_buttons*)malloc(sizeof(game_buttons));
-	env = (game_environment*)malloc(sizeof(game_environment));
+	g = (game*)malloc(sizeof(game));
+
+	g->cakesToDrop = NULL;
+	g->cakes = NULL;
+
+	game_reset();		
 	
+	env = (game_environment*)malloc(sizeof(game_environment));
+
+	// bg1	
 	env->bg1 = sprite_create("bg1", 1);
 	sprite_setPosition(env->bg1, 320, 360);
 
+	// bg2
 	env->bg2 = sprite_create("bg2", 1);
 	sprite_setPosition(env->bg2, 320, 426);
+
+	// baker	
+	env->baker = sprite_create("baker", 1);
 	
+	// plate
+	env->plate = sprite_create("plate", 1);
+
+
+	// logo
+	env->logo = sprite_create("logo", 1);
+	
+	// table
+	env->table = sprite_create("table", 1);
+
+	// timeup
+	env->timeup = sprite_create("timeup", 1);
+	env->timeup->scaleX = 0;
+	env->timeup->scaleY = 0;
+
+	// arm
+	env->arm = sprite_create("arm", 1);
+	sprite_setPosition(env->arm, 0, -180);
+
+
+	// aboutScreen
+	env->aboutScreen = sprite_create("about_screen", 1);
+	sprite_setPosition(env->aboutScreen, 320, -220);	
+
+	// game over	
+	env->gameover = sprite_create("gameover", 1);	
+	sprite_setPosition(env->gameover, 320, -220);	
+
 	// MENU
 	
 	// play button
-	b->play = sprite_create("pause", 2);
-	sprite_setPosition(b->play, 320, 360);
-
+	b->play = sprite_create("play", 2);
+	b->play->mouseEnabled = 1;
+	
 	engine_addEntity((void*)(env->bg1));
 	engine_addEntity((void*)(env->bg2));
-	engine_addEntity((void*)(b->play));	
+	engine_addEntity((void*)(env->baker));
+	engine_addEntity((void*)(env->logo));
+	engine_addEntity((void*)(env->table));
+	engine_addEntity((void*)(env->plate));
+	engine_addEntity((void*)(env->timeup));
+	engine_addEntity((void*)(env->gameover));
+	engine_addEntity((void*)(env->arm));
+	engine_addEntity((void*)(env->aboutScreen));
 
+	engine_addEntity((void*)(b->play));	
+	
 
 	b->play->onMouseDown = &callback_buttonDownDefault;	
 	b->play->onMouseUp = &callback_buttonUpDefault;	
 	b->play->onClick = &callback_startGameFromMenu;	
+
+	game_showMenu();
 }
 
 int game_handleEvent(SDL_Event* e)
 {
-	if (e->type == SDL_MOUSEBUTTONUP && e->button.button == SDL_BUTTON_LEFT)  
+	if (g->playing)
 	{
-		// handle click
+		if (e->type == SDL_MOUSEBUTTONDOWN && e->button.button == SDL_BUTTON_LEFT)  
+		{
+			// handle click somehow
+			//game_finishGame();
+		}
 	}
+
 
 	return 1;	
 }
 
-void game_draw()
+void game_showGame()
 {
+	// reset plate
+	sprite_setPosition(env->plate, 940, 635);
+
+	// TODO: on Complete launch gameplay!!!!
+	tween_create(env->plate, 320, env->plate->y, 1, 1, 0, 500, 500, NULL, &game_startGame);
+
+
+	// config table
+			
 }
+
+void game_startGame()
+{
+	g->playing = 1;
+
+	env->arm->y = 80;
+
+	game_makeNewCake();
+}
+
+void game_update()
+{
+	
+	if (g->playing)
+	{
+		if (g->falling == 0)
+		{
+			// move stuff around
+			if (env->arm->x > 625 || env->arm->x < -15)
+            {
+                g->dir *= -1;
+            }
+ 
+            env->arm->x += g->dir * g->speed;
+		}	
+	}		
+
+
+}
+
+void game_makeNewCake()
+{
+	env->arm->x = rand() % 10 > 5 ? -15 : 625;
+}
+
+void game_dropCake()
+{
+
+}
+
+void game_finishGame()
+{
+	if (g->playing == 0) return;
+	g->playing = 0;
+	
+	// show here shit like time up
+	env->timeup->scaleX = 0;
+	env->timeup->scaleY = 0;
+	
+	sprite_setPosition(env->timeup, 320, 360);
+	env->timeup->rotation = 50;
+	
+	tween_create(env->timeup, 320, 360, 1.2, 1.2, 0, 1000,   0, &elasticOut, NULL);
+
+	env->timeup->scaleX = 1.2;
+	env->timeup->scaleY = 1.2;	
+	env->timeup->rotation = 0;	
+	
+	tween_create(env->timeup, 1000, 360, 1.2, 1.2, 0, 500, 2000,  &backIn, NULL);
+
+	
+	// hide table	
+	tween_create(env->table, 320, env->table->y + 360, 1, 1, 0, 500, 2300, NULL, NULL);		
+	
+	// hide plate as well
+	tween_create(env->plate, 320, env->plate->y + 360, 1, 1, 0, 500, 2300, NULL, NULL);		
+
+	// hide arm
+	tween_create(env->arm, env->arm->x, -180, 1, 1, 0, 300, 0, NULL, NULL);
+
+	// TODO: hide available cakes
+
+
+	// tween bg
+	
+	tween_create(env->bg2, 320, env->bg2->y + 160, 1, 1, 0, 500, 2400, &expoOut, NULL);		
+
+	// tween gameover
+	tween_create(env->gameover, 320, 300, 1, 1, 0, 1000, 2800, &elasticOut, &game_hideGame);
+}
+
+void game_hideGame()
+{
+	// hide level stuff and/or gameover/pause
+	
+	// hide gameover	
+	tween_create(env->gameover, 320, -220, 1, 1, 0, 500, 0, &backIn, NULL);
+	
+	// TODO: reset game stats
+	game_reset();
+
+
+	game_showMenu();
+}
+
+void game_hideMenu()
+{
+	tween_create(env->bg2, env->bg2->x, env->bg2->y, 1, 1, 0, 500, 0, NULL, NULL);
+
+
+	tween_create(env->baker, -200, env->baker->y, 1, 1, 0.7 * 180 / M_PI, 500, 0, NULL, NULL);	
+
+	
+	tween_create(env->logo, env->logo->x, -200, 1, 1, 0, 600, 0, &backIn, NULL);
+
+	tween_create(b->play, b->play->x, 870, 1, 1, 0, 500, 0, &backIn, NULL);
+}
+
+void game_showMenu()
+{
+	// setup bg2
+
+	tween_create(env->bg2, 320, 426, 1.2, 1.2, 0, 500, 0, NULL, NULL);
+
+
+	// setup baker
+	sprite_setPosition(env->baker, 315, 1030);
+	env->baker->rotation = 0.7 * 180 / M_PI;
+	
+	tween_create(env->baker, env->baker->x, 466, 1, 1, 0, 500, 0, NULL, NULL);	
+
+	
+	// setup logo
+	sprite_setPosition(env->logo, 190, 150);
+	env->logo->scaleX = env->logo->scaleY = 0;
+	
+	tween_create(env->logo, env->logo->x, env->logo->y, 1, 1, 0, 600, 400, &elasticOut, NULL);
+
+	// table
+	sprite_setPosition(env->table, 320, 800);
+	tween_create(env->table, env->table->x, 695, 1, 1, 0, 500, 0, NULL, NULL);	
+
+
+	// play button
+	sprite_setPosition(b->play, 425, 870);
+
+	tween_create(b->play, b->play->x, 395, 1, 1, 0, 500, 600, &backOut, NULL);
+
+	// plate	
+	sprite_setPosition(env->plate, 940, 635);
+
+}
+
+
 
 void game_free()
 {
+	game_reset();
+
 	// destroy buttons
 	sprite_free(b->play);
 	
@@ -61,9 +307,18 @@ void game_free()
 	// destroy environment
 	sprite_free(env->bg1);
 	sprite_free(env->bg2);
-
+	sprite_free(env->baker);
+	sprite_free(env->plate);
+	sprite_free(env->logo);
+	sprite_free(env->table);
+	sprite_free(env->timeup);
+	sprite_free(env->gameover);
+	sprite_free(env->aboutScreen);
+	sprite_free(env->arm);
 
 
 	free(env);
+
+	free(g);
 }
 // do smth here

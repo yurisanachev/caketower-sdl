@@ -3,6 +3,7 @@
 #include "assets.h"
 #include "game.h"
 #include "tween.h"
+#include <time.h>
 
 #define FPS 60
 
@@ -23,6 +24,8 @@ void engine_removeEntity(void* data)
 
 int engine_init(char* name, int width, int height)
 {
+	srand(time(NULL));
+
 	// init SDL2
 	
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
@@ -59,7 +62,24 @@ int engine_init(char* name, int width, int height)
 	// load assets
 	assets_loadTexture("bg1", "../assets/bg1.png", ren);
 	assets_loadTexture("bg2", "../assets/bg2.png", ren);
-	assets_loadTexture("pause", "../assets/pause_button.png", ren);
+	assets_loadTexture("baker", "../assets/baker.png", ren);
+	assets_loadTexture("plate", "../assets/plate.png", ren);
+	assets_loadTexture("table", "../assets/table.png", ren);
+	assets_loadTexture("logo", "../assets/logo.png", ren);
+	assets_loadTexture("arm", "../assets/arm.png", ren);
+	assets_loadTexture("gameover", "../assets/gameover.png", ren);
+	assets_loadTexture("timeup", "../assets/timeup.png", ren);
+	assets_loadTexture("cake", "../assets/cake.png", ren);
+	assets_loadTexture("font", "../assets/font.png", ren);
+	assets_loadTexture("clock", "../assets/clock.png", ren);
+	assets_loadTexture("clouds", "../assets/clouds.png", ren);
+	assets_loadTexture("tutorial", "../assets/tutorial.png", ren);
+	assets_loadTexture("about_screen", "../assets/about_screen.png", ren);
+	
+	assets_loadTexture("exit", "../assets/exit_button.png", ren);
+	assets_loadTexture("about", "../assets/about_button.png", ren);
+	assets_loadTexture("sound", "../assets/sound_button.png", ren);
+	assets_loadTexture("play", "../assets/play_button.png", ren);
 
 	// setup game
 	game_init();
@@ -81,7 +101,7 @@ int engine_handleEvent(SDL_Event* e)
 		list_t* it = entities;
 		while (it)
 		{
-			sprite_handleMouse((sprite*)(it->value), e);
+			if (sprite_handleMouse((sprite*)(it->value), e)) return 1;
 		
 			it = it->next;
 		}
@@ -105,6 +125,8 @@ void engine_update()
 
 		it = safe;
 	}
+
+	game_update();
 }
 
 void engine_draw()

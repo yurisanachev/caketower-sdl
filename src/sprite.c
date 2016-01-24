@@ -23,6 +23,9 @@ sprite* sprite_create(char* name, int frames)
     s->rotation = 0;
     s->currentFrame = 1;
 	s->mouseDown = 0;
+	
+	s->mouseEnabled = 0;
+
     s->tex = assets_getTexture(name);
 	SDL_QueryTexture(s->tex, NULL, NULL, &(s->width), &(s->height));
 
@@ -41,8 +44,9 @@ void sprite_setPosition(sprite* s, int x, int y)
 	s->y = y;
 }
 
-void sprite_handleMouse(sprite* s, SDL_Event* e)
+int sprite_handleMouse(sprite* s, SDL_Event* e)
 {
+	if (s->mouseEnabled == 0) return 0;
 	// mouse
 	SDL_Rect m;
 	SDL_GetMouseState(&m.x, &m.y);
@@ -67,6 +71,8 @@ void sprite_handleMouse(sprite* s, SDL_Event* e)
 				// handle onMouseDown
 				if (s->onMouseDown != NULL) s->onMouseDown(s);
 				s->mouseDown = 1;
+				
+				return 1;
 			}	
 			break;
 		
@@ -83,7 +89,9 @@ void sprite_handleMouse(sprite* s, SDL_Event* e)
 				s->mouseDown = 0;
 			}
 			break;
-	}	
+	}
+
+	return 0;	
 }
 
 void sprite_draw(sprite* s)

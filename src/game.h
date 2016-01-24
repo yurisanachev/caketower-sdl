@@ -36,12 +36,16 @@ extern game_environment* env;
 typedef struct {
 	int playing;
 	int gameOver;
-	int falling;
+	int dropping;
 	int score;
 	int speed;
 	int dir;
 	int lastCakeY;
-
+	int cakesAvailable;
+	int cakeAmount;
+	int cakeSize;
+	int dropSpeed;
+	
 	list_t* cakesToDrop;
 	list_t* cakes; 
 } game;
@@ -58,6 +62,7 @@ void game_hideGame();
 
 void game_reset();
 
+void game_makeFallCheck();
 void game_makeNewCake();
 void game_dropCake();
 

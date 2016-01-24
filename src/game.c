@@ -11,11 +11,15 @@ void game_reset()
 {
 	g->playing = 0;
 	g->gameOver = 0;
-	g->falling = 0;
+	g->dropping = 0;
 	g->score = 0;
 	g->speed = 5;
 	g->dir = 1;
-	g->lastCakeY = 630;
+	g->lastCakeY = 550;
+	g->cakesAvailable = 5;
+	g->cakeAmount = 6;
+	g->cakeSize = 80;
+	g->dropSpeed = 0;
 
 	// clear all cakes to drop
 	list_t* it = g->cakesToDrop;
@@ -123,12 +127,15 @@ void game_init()
 
 int game_handleEvent(SDL_Event* e)
 {
-	if (g->playing)
+	if (g->playing && g->gameOver == 0 && g->dropping == 0)
 	{
 		if (e->type == SDL_MOUSEBUTTONDOWN && e->button.button == SDL_BUTTON_LEFT)  
 		{
 			// handle click somehow
 			//game_finishGame();
+			g->dropping = 1;
+			//g->lastCakeY -= g->cakeSize;
+			g->dropSpeed = 7;
 		}
 	}
 
@@ -153,8 +160,6 @@ void game_startGame()
 {
 	g->playing = 1;
 
-	env->arm->y = 80;
-
 	game_makeNewCake();
 }
 
@@ -163,7 +168,8 @@ void game_update()
 	
 	if (g->playing)
 	{
-		if (g->falling == 0)
+
+		if (g->dropping == 0 && g->gameOver == 0)
 		{
 			// move stuff around
 			if (env->arm->x > 625 || env->arm->x < -15)
@@ -172,6 +178,50 @@ void game_update()
             }
  
             env->arm->x += g->dir * g->speed;
+			
+			list_t* it = g->cakesToDrop;
+
+			while (it)
+			{
+				((sprite*)(it->value))->x += g->dir * g->speed;
+				it = it->next;
+			}			
+
+		} else if (g->dropping) 
+		{ 
+			// do here smth !!!!
+			env->arm->y -= 10;
+
+			list_t* it = g->cakesToDrop;
+	
+			while (it)
+			{
+				sprite* c = (sprite*)(it->value);	
+			
+				if (c->y == g->lastCakeY)
+				{
+					g->dropping = 0;
+				
+					game_makeNewCake();
+					break;
+				}
+
+				if (g->lastCakeY - c->y < g->dropSpeed)
+				{
+					c->y = g->lastCakeY;
+				} else {
+					c->y += g->dropSpeed;
+				}
+			
+				c->scaleX -= 0.005;
+				c->scaleY -= 0.01;	
+				
+
+	
+				it = it->next;
+			}
+
+			g->dropSpeed++;	
 		}	
 	}		
 
@@ -180,7 +230,76 @@ void game_update()
 
 void game_makeNewCake()
 {
+	env->arm->y = 80;	
+	
+	game_makeFallCheck();
+
+	if (list_length(g->cakesToDrop) > 0)
+	{
+		// attach dropped one
+		list_t* it = g->cakes;
+
+		while (it)
+		{
+			sprite* c = (sprite*)(it->value);
+			tween_create(c, c->x, c->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+
+			it = it->next;
+		}
+		
+		it = g->cakesToDrop;
+		
+		while (it)
+		{
+			sprite* c = (sprite*)(it->value);
+			tween_create(c, c->x, c->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+			
+			list_add_back(&(g->cakes), it->value);	
+			it = it->next;
+		}	
+		
+
+		
+
+	
+		
+
+		tween_create(env->plate, 320, env->plate->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+		tween_create(env->table, 320, env->table->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+		tween_create(env->bg2, 320, env->bg2->y + g->cakeSize / 8, 1, 1, 0, 300, 0, NULL, NULL);
+	}
+	
+	list_free(&(g->cakesToDrop));
+
 	env->arm->x = rand() % 10 > 5 ? -15 : 625;
+
+	int startX = 0;
+
+	for (int i = 0; i < g->cakeAmount; i++)
+	{
+		sprite* c = sprite_create("cake", 11);
+	
+		if (g->cakeAmount % 2 != 0) startX = env->arm->x - (g->cakeAmount - 1) / 2 * g->cakeSize;
+		else startX = env->arm->x - g->cakeSize / 2 - (g->cakeAmount / 2 - 1) * g->cakeSize;
+		
+		
+		startX += 30;
+
+		sprite_setPosition(c, startX + i * g->cakeSize, env->arm->y + 90);
+
+		list_add_back(&(g->cakesToDrop), c);
+		engine_addEntity(c);
+	}
+
+
+}
+
+void game_makeFallCheck()
+{
+	int len = list_length(g->cakes);
+	
+	//int leftCheck = len > 0 ? 	
+	
 }
 
 void game_dropCake()

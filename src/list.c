@@ -29,7 +29,6 @@ void list_remove(list_t** head, void* elem)
 
 	if (i == -1) 
 	{
-		puts("No such element");
 		return;
 	}
 	

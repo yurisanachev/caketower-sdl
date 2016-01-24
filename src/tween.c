@@ -8,7 +8,8 @@ void tween_create(sprite* obj,
 		double dSX, 
 		double dSY, 
 		double dR,
-		int time)
+		int time,
+		double (*easing)(double))
 {
 	tween* t = (tween*)malloc(sizeof(tween));	
 	
@@ -28,6 +29,9 @@ void tween_create(sprite* obj,
 	t->time = time;
 	t->elapsed = 0;
 	t->obj = obj;
+	
+	t->easing = NULL;
+	t->easing = easing;	
 
 	list_add_back(&tweens, (void*)t);
 }
@@ -46,7 +50,7 @@ void tween_update(tween* t)
 	
 	double delta = 1.0 * t->elapsed / t->time;
 	
-	printf("from %d to %d", t->sx, t->dx);
+	if (t->easing != NULL) delta = t->easing(delta);
 	
 	sprite_setPosition(t->obj, t->sx + delta * t->dx, t->sy + delta * t->dy);	
 	t->obj->scaleX = t->sScaleX + delta * t->dScaleX; 

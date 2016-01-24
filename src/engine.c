@@ -105,8 +105,6 @@ void engine_update()
 
 		it = safe;
 	}
-	
-	printf("Live tweens: %d \n", list_length(tweens));
 }
 
 void engine_draw()

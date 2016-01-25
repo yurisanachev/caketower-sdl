@@ -38,7 +38,7 @@ typedef struct {
 	int gameOver;
 	int dropping;
 	int score;
-	int speed;
+	double speed;
 	int dir;
 	int lastCakeY;
 	int cakesAvailable;
@@ -64,7 +64,6 @@ void game_reset();
 
 void game_makeFallCheck();
 void game_makeNewCake();
-void game_dropCake();
 
 void game_init();
 void game_update();

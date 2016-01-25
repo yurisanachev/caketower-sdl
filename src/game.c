@@ -237,14 +237,28 @@ void game_makeNewCake()
 	if (list_length(g->cakesToDrop) > 0)
 	{
 		// attach dropped one
+		if (g->speed < 25) g->speed += 0.5; 
+
 		list_t* it = g->cakes;
 
 		while (it)
 		{
 			sprite* c = (sprite*)(it->value);
-			tween_create(c, c->x, c->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+			
+			list_t* safe = it->next;
 
-			it = it->next;
+			if (c->y > 720)
+			{
+				// just remove those cakes
+				list_remove(&(g->cakes), (void*)c);
+				engine_removeEntity(c);	
+				sprite_free(c);
+	
+			} else {
+				tween_create(c, c->x, c->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+			}
+
+			it = safe;
 		}
 		
 		it = g->cakesToDrop;
@@ -258,12 +272,6 @@ void game_makeNewCake()
 			it = it->next;
 		}	
 		
-
-		
-
-	
-		
-
 		tween_create(env->plate, 320, env->plate->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
 		tween_create(env->table, 320, env->table->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
 		tween_create(env->bg2, 320, env->bg2->y + g->cakeSize / 8, 1, 1, 0, 300, 0, NULL, NULL);
@@ -300,11 +308,6 @@ void game_makeFallCheck()
 	
 	//int leftCheck = len > 0 ? 	
 	
-}
-
-void game_dropCake()
-{
-
 }
 
 void game_finishGame()

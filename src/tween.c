@@ -41,13 +41,25 @@ void tween_create(sprite* obj,
 	list_add_back(&tweens, (void*)t);
 }
 
+void tween_killTweensOf(void* data)
+{
+	list_t* it = tweens;
+	
+	while (it)
+	{
+		list_t* safe = it->next;
+		tween* curr = (tween*)(it->value);
+		if (curr->obj == data) tween_destroy(curr); 
+		it = safe;		
+	}
+}
+
 void tween_update(tween* t)
 {
 	if (t->obj == NULL || t->elapsed == t->time)
 	{
 		if (t->onComplete != NULL) t->onComplete(); 
 	
-		list_remove(&tweens, t);
 		tween_destroy(t);
 
 		return;
@@ -72,6 +84,8 @@ void tween_update(tween* t)
 
 void tween_destroy(tween* t)
 {
+	list_remove(&tweens, t);
+	
 	t->obj = NULL;
 	t->easing = NULL;
 	t->onComplete = NULL;

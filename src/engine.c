@@ -20,6 +20,7 @@ void engine_addEntity(void* data)
 void engine_removeEntity(void* data)
 {
 	list_remove(&entities, data);
+	tween_killTweensOf(data);
 }
 
 int engine_init(char* name, int width, int height)

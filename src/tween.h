@@ -37,6 +37,7 @@ void tween_create(sprite* obj,
 		double (*easing)(double),
 		void (*onComplete)());
 
+void tween_killTweensOf(void*);
 void tween_update(tween* t);
 void tween_destroy(tween* t);
 #endif

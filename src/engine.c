@@ -158,6 +158,8 @@ int engine_updateFrame(int prevTime)
 
 void engine_destroy()
 {
+	game_free();
+	
 	// remove all entities as well
 	list_free(&entities);
 	
@@ -175,7 +177,6 @@ void engine_destroy()
 	
 	assets_free();
    
-	game_free();
  
  	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow( window );

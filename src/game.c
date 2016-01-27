@@ -20,12 +20,15 @@ void game_reset()
 	g->cakeAmount = 6;
 	g->cakeSize = 80;
 	g->dropSpeed = 0;
+	g->timeLeft = 100;
+
 
 	// clear all cakes to drop
 	list_t* it = g->cakesToDrop;
 	
 	while (it)
 	{	
+		engine_removeEntity(it->value);
 		sprite_free((sprite*)(it->value));
 		it = it->next;
 	}
@@ -38,6 +41,7 @@ void game_reset()
 	
 	while (it)
 	{	
+		engine_removeEntity(it->value);
 		sprite_free((sprite*)(it->value));
 		it = it->next;
 	}
@@ -55,8 +59,6 @@ void game_init()
 	g->cakesToDrop = NULL;
 	g->cakes = NULL;
 
-	game_reset();		
-	
 	env = (game_environment*)malloc(sizeof(game_environment));
 
 	// bg1	
@@ -145,6 +147,9 @@ int game_handleEvent(SDL_Event* e)
 
 void game_showGame()
 {
+	// reset game
+	game_reset();
+
 	// reset plate
 	sprite_setPosition(env->plate, 940, 635);
 
@@ -168,6 +173,21 @@ void game_update()
 	
 	if (g->playing)
 	{
+		// update time left
+		if (g->timeLeft > -1)
+		{
+			g->timeLeft--;
+			
+			if (g->timeLeft == -1)
+			{
+				g->gameOver = 1;
+				if (g->dropping == 0)
+				{
+					game_finishGame();
+				}
+			}
+		}
+		
 
 		if (g->dropping == 0 && g->gameOver == 0)
 		{
@@ -224,6 +244,9 @@ void game_update()
 			g->dropSpeed++;	
 		}	
 	}		
+
+
+		
 
 
 }
@@ -299,7 +322,7 @@ void game_makeNewCake()
 		engine_addEntity(c);
 	}
 
-
+	if (g->gameOver) game_finishGame();
 }
 
 void game_makeFallCheck()
@@ -322,13 +345,18 @@ void game_finishGame()
 	sprite_setPosition(env->timeup, 320, 360);
 	env->timeup->rotation = 50;
 	
-	tween_create(env->timeup, 320, 360, 1.2, 1.2, 0, 1000,   0, &elasticOut, NULL);
+	tween_create(env->timeup, 320, 360, 1.2, 1.2, 0, 2000,   0, &elasticOut, NULL);
 
 	env->timeup->scaleX = 1.2;
 	env->timeup->scaleY = 1.2;	
 	env->timeup->rotation = 0;	
 	
 	tween_create(env->timeup, 1000, 360, 1.2, 1.2, 0, 500, 2000,  &backIn, NULL);
+
+	env->timeup->scaleX = 0;
+	env->timeup->scaleY = 0;	
+	env->timeup->rotation = 50;	
+	
 
 	
 	// hide table	
@@ -340,8 +368,29 @@ void game_finishGame()
 	// hide arm
 	tween_create(env->arm, env->arm->x, -180, 1, 1, 0, 300, 0, NULL, NULL);
 
-	// TODO: hide available cakes
+	// hide available cakes
+	list_t* it = g->cakesToDrop;
+	sprite* curr;	
 
+	while (it)
+	{	
+		curr = (sprite*)(it->value);
+		tween_create(curr, curr->x, -200, 1, 1, 0, 300, 0, NULL, NULL);	
+	
+		it = it->next;
+	}	
+
+
+	// hide tower as well
+	it = g->cakes;	
+
+	while (it)
+	{	
+		curr = (sprite*)(it->value);
+		tween_create(curr, curr->x, curr->y + 220, 1, 1, 0, 300, 2300, NULL, NULL);	
+	
+		it = it->next;
+	}
 
 	// tween bg
 	
@@ -358,10 +407,12 @@ void game_hideGame()
 	// hide gameover	
 	tween_create(env->gameover, 320, -220, 1, 1, 0, 500, 0, &backIn, NULL);
 	
-	// TODO: reset game stats
+
+	
+	// reset stats
 	game_reset();
 
-
+	// show menu
 	game_showMenu();
 }
 
@@ -420,6 +471,8 @@ void game_free()
 	game_reset();
 
 	// destroy buttons
+	
+	engine_removeEntity((void*)(b->play));
 	sprite_free(b->play);
 	
 
@@ -427,15 +480,36 @@ void game_free()
 	free(b);
 
 	// destroy environment
+	
+
+	engine_removeEntity((void*)(env->bg1));
 	sprite_free(env->bg1);
+	
+	engine_removeEntity((void*)(env->bg2));
 	sprite_free(env->bg2);
+	
+	engine_removeEntity((void*)(env->baker));
 	sprite_free(env->baker);
+	
+	engine_removeEntity((void*)(env->plate));
 	sprite_free(env->plate);
+	
+	engine_removeEntity((void*)(env->logo));
 	sprite_free(env->logo);
+	
+	engine_removeEntity((void*)(env->table));
 	sprite_free(env->table);
+	
+	engine_removeEntity((void*)(env->timeup));
 	sprite_free(env->timeup);
+	
+	engine_removeEntity((void*)(env->gameover));
 	sprite_free(env->gameover);
+	
+	engine_removeEntity((void*)(env->aboutScreen));
 	sprite_free(env->aboutScreen);
+	
+	engine_removeEntity((void*)(env->arm));
 	sprite_free(env->arm);
 
 

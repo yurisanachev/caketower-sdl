@@ -45,6 +45,8 @@ typedef struct {
 	int cakeAmount;
 	int cakeSize;
 	int dropSpeed;
+	int timeLeft;
+
 	
 	list_t* cakesToDrop;
 	list_t* cakes; 

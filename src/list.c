@@ -10,6 +10,12 @@ list_t* list_create(void* data)
 	return temp;
 }
 
+void* list_shift(list_t** head)
+{
+	void* r = list_get(*head, 0);
+	list_remove(head, r);	
+	return r;
+}
 
 void list_remove(list_t** head, void* elem)
 {

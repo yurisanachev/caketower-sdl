@@ -10,8 +10,6 @@
 // buttons
 typedef struct {
 	sprite* play;
-	sprite* about;
-	sprite* sound;
 } game_buttons;
 
 extern game_buttons* b;
@@ -28,7 +26,7 @@ typedef struct {
 
 	sprite* arm;	
 	sprite* gameover;
-	sprite* aboutScreen;
+	sprite* tutorial;
 	sprite* timeup;
 	sprite* clock;
 	
@@ -52,13 +50,19 @@ typedef struct {
 	int cakeSize;
 	int dropSpeed;
 	int timeLeft;
-
+	int totalHeight;
 	
 	list_t* cakesToDrop;
 	list_t* cakes; 
+	list_t* falling; 
+	list_t* clouds; 
 } game;
 
 extern game* g;
+
+void game_freeSpriteList(list_t**);
+
+void game_addCloud();
 
 void game_showMenu();
 void game_hideMenu();

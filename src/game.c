@@ -4,7 +4,7 @@
 #include "tween.h"
 
 #define CAKE_MAX_Y 550
-#define DEADLINE_TIME 3
+#define DEADLINE_TIME 10
 
 game_buttons* b = NULL;
 game_environment* env = NULL;
@@ -16,31 +16,32 @@ void game_reset()
 	g->gameOver = 0;
 	g->dropping = 0;
 	g->score = 0;
-	g->speed = 5;
+	g->speed = 7;
 	g->dir = 1;
 	g->dt = 0;
 	g->cakesAvailable = 5;
 	g->cakeAmount = 6;
 	g->cakeSize = 80;
 	g->dropSpeed = 0;
-	g->timeLeft = 5;
-
+	g->timeLeft = 50;
+	g->totalHeight = 0;
 
 	// clear all cakes to drop
-	list_t* it = g->cakesToDrop;
+	game_freeSpriteList(&(g->cakesToDrop));
 	
-	while (it)
-	{	
-		engine_removeEntity((entity*)(it->value));
-		sprite_free((sprite*)(it->value));
-		it = it->next;
-	}
-
-	list_free(&(g->cakesToDrop));	
-
-
 	// clear all other cakes
-	it = g->cakes;
+	game_freeSpriteList(&(g->cakes));
+
+	// clear falling
+	game_freeSpriteList(&(g->falling));
+	
+	// clear clouds
+	game_freeSpriteList(&(g->clouds));
+}
+
+void game_freeSpriteList(list_t** head)
+{
+	list_t* it = *head;
 	
 	while (it)
 	{	
@@ -49,7 +50,33 @@ void game_reset()
 		it = it->next;
 	}
 
-	list_free(&(g->cakes));
+	list_free(head);
+	
+}
+
+void game_addCloud()
+{
+	int len = list_length(g->clouds);
+	sprite* cloud = (len > 8) ? (sprite*)(list_shift(&(g->clouds))) : sprite_create("clouds", 6);
+
+	if (len <= 8) engine_addEntity((entity*)cloud);
+	
+	cloud->currentFrame = rand() % 6 + 1;	
+	cloud->scaleX = cloud->scaleY = rand() % 10 > 5 ? 1 : 1.3;	
+	
+	cloud->y = -80 - rand() % 30;
+
+	len = list_length(g->clouds);
+	
+	if (len == 0 || ((sprite*)(list_get(g->clouds, len - 1)))->x < 320)
+	{
+		cloud->x = rand() % 100 + 490;
+	} else
+	{	
+		cloud->x = rand() % 100 + 75;
+	} 
+
+	list_add_back(&(g->clouds), (void*)cloud);
 	
 }
 
@@ -61,6 +88,8 @@ void game_init()
 
 	g->cakesToDrop = NULL;
 	g->cakes = NULL;
+	g->falling = NULL;
+	g->clouds = NULL;
 
 	env = (game_environment*)malloc(sizeof(game_environment));
 
@@ -99,10 +128,10 @@ void game_init()
 	env->clock = sprite_create("clock", 1);
 	sprite_setPosition(env->clock, 40, 800);
 
-	// aboutScreen
-	env->aboutScreen = sprite_create("about_screen", 1);
-	sprite_setPosition(env->aboutScreen, 320, -220);	
-
+	// tutorial
+	env->tutorial = sprite_create("tutorial", 1);
+	sprite_setPosition(env->tutorial, 850, 420);	
+	
 	// game over	
 	env->gameover = sprite_create("gameover", 1);	
 	sprite_setPosition(env->gameover, 320, -220);	
@@ -112,7 +141,7 @@ void game_init()
 	textfield_setPosition(env->timeField, 75, 800);
 
 	// score field	
-	env->scoreField = textfield_create("000000", "font", "0123456789:");
+	env->scoreField = textfield_create("0000000", "font", "0123456789:");
 	textfield_setPosition(env->scoreField, 450, 800);
 
 
@@ -132,7 +161,7 @@ void game_init()
 	engine_addEntity((entity*)(env->gameover));
 	engine_addEntity((entity*)(env->clock));
 	engine_addEntity((entity*)(env->arm));
-	engine_addEntity((entity*)(env->aboutScreen));
+	engine_addEntity((entity*)(env->tutorial));
 	engine_addEntity((entity*)(env->timeField));
 	engine_addEntity((entity*)(env->scoreField));
 
@@ -155,6 +184,11 @@ int game_handleEvent(SDL_Event* e)
 			// drop cake!	
 			g->dropping = 1;
 			g->dropSpeed = 7;
+		
+			if (env->tutorial->scaleX == 1)
+			{
+				tween_create((entity*)(env->tutorial), 320, 420, 0, 0, 0, 500, 0, &backIn, NULL);
+			}
 		}
 	}
 
@@ -173,18 +207,23 @@ void game_showGame()
 	// on Complete launch gameplay!!!!
 	tween_create((entity*)(env->plate), 320, env->plate->y, 1, 1, 0, 500, 500, NULL, &game_startGame);
 
+	// tutorial
+	sprite_setPosition(env->tutorial, 320, 420);
+	env->tutorial->scaleX = env->tutorial->scaleY = 0;	
+	tween_create((entity*)(env->tutorial), 320, 420, 1, 1, 0, 500, 600, &elasticOut, NULL);
+
 	// clock icon
 	sprite_setPosition(env->clock, 40, 800);
 	tween_create((entity*)(env->clock), 35, 680, 1, 1, 0, 500, 600, NULL, NULL);	
 	
 	// time field
-	engine_setEntityPosition((entity*)(env->timeField), 75, 800);
-	tween_create((entity*)(env->timeField), 80, 680, 1, 1, 0, 500, 700, NULL, NULL);
+	engine_setEntityPosition((entity*)(env->timeField), 85, 800);
+	tween_create((entity*)(env->timeField), 85, 680, 1, 1, 0, 500, 700, NULL, NULL);
 
 
 	// score field
-	engine_setEntityPosition((entity*)(env->scoreField), 450, 800);
-	tween_create((entity*)(env->scoreField), 445, 680, 1, 1, 0, 500, 800, NULL, NULL);
+	engine_setEntityPosition((entity*)(env->scoreField), 425, 800);
+	tween_create((entity*)(env->scoreField), 425, 680, 1, 1, 0, 500, 800, NULL, NULL);
 
 
 	// make them visible
@@ -204,11 +243,13 @@ void game_startGame()
 
 void game_update()
 {
+		
+	// update time
 	char* timeText = malloc(sizeof(char) * 5);
-		if (g->gameOver == 0) sprintf(timeText, "%02d:%02d", g->timeLeft, 60 - g->dt);
-		else sprintf(timeText, "00:00");
-		textfield_setText(env->timeField, timeText);
-		free(timeText);   
+	if (g->gameOver == 0) sprintf(timeText, "%02d:%02d", g->timeLeft, 60 - g->dt);
+	else sprintf(timeText, "00:00");
+	textfield_setText(env->timeField, timeText);
+	//free(timeText);   
  
 
 	if (g->playing)
@@ -244,6 +285,11 @@ void game_update()
 
 		}
 
+		// update score
+		char* scoreText = malloc(sizeof(char) * 7);
+		sprintf(scoreText, "%07d", g->score);
+		textfield_setText(env->scoreField, scoreText);
+		//free(scoreText);   
 
 
 
@@ -303,10 +349,6 @@ void game_update()
 		}	
 	}		
 
-
-		
-
-
 }
 
 void game_makeNewCake()
@@ -315,10 +357,28 @@ void game_makeNewCake()
 	
 	game_makeFallCheck();
 
+	int needScroll = 0;
+
 	if (list_length(g->cakesToDrop) > 0)
 	{
+		needScroll = 1;
+
 		// attach dropped one
 		if (g->speed < 25) g->speed += 0.5; 
+
+		g->totalHeight++;	
+
+			
+
+		g->score += 70 * g->cakeAmount * g->speed;
+
+
+		if (g->cakesAvailable < 11 && g->score > 60000 * (g->cakesAvailable - 4))
+		{
+			g->cakesAvailable++;
+		}
+
+	
 
 		list_t* it = g->cakes;
 
@@ -356,6 +416,20 @@ void game_makeNewCake()
 		tween_create(env->plate, 320, env->plate->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
 		tween_create(env->table, 320, env->table->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
 		tween_create(env->bg2, 320, env->bg2->y + g->cakeSize / 8, 1, 1, 0, 300, 0, NULL, NULL);
+
+		if (g->totalHeight % 7 == 0) 
+		{
+		 	game_addCloud();
+		}
+
+		engine_removeEntity((entity*)(env->scoreField));
+		engine_removeEntity((entity*)(env->arm));
+		engine_removeEntity((entity*)(env->timeField));
+		engine_removeEntity((entity*)(env->clock));
+		engine_addEntity((entity*)(env->scoreField));
+		engine_addEntity((entity*)(env->timeField));
+		engine_addEntity((entity*)(env->clock));
+		engine_addEntity((entity*)(env->arm));
 	}
 	
 	list_free(&(g->cakesToDrop));
@@ -380,7 +454,35 @@ void game_makeNewCake()
 		engine_addEntity((entity*)c);
 	}
 
-	if (g->gameOver) game_finishGame();
+	// tween clouds as well if we proceed!
+	if (needScroll)
+	{
+
+		list_t* it = g->clouds;
+
+		sprite* cloud;
+	
+		while (it)
+		{
+			cloud = (sprite*)(it->value);
+			
+			// put blurred on top	
+			if (cloud->currentFrame > 4) 
+			{
+				engine_removeEntity((entity*)cloud);
+				engine_addEntity((entity*)cloud);
+			}
+	
+			tween_create(cloud, cloud->x, cloud->y + g->cakeSize / 3, 1, 1, 0, 600, 0, &backOut, NULL);
+			it = it->next;
+		}
+	}
+
+
+	if (g->gameOver) 
+	{
+		game_finishGame();
+	}
 }
 
 void game_makeFallCheck()
@@ -402,6 +504,9 @@ void game_finishGame()
 	
 	sprite_setPosition(env->timeup, 320, 360);
 	env->timeup->rotation = 50;
+
+	engine_removeEntity((entity*)(env->timeup));
+	engine_addEntity((entity*)(env->timeup));
 	
 	tween_create(env->timeup, 320, 360, 1.2, 1.2, 0, 2000,   0, &elasticOut, NULL);
 
@@ -417,10 +522,12 @@ void game_finishGame()
 	
 
 	
-	// hide table	
+	// hide table
+	tween_killTweensOf(env->table);	
 	tween_create(env->table, 320, env->table->y + 360, 1, 1, 0, 500, 2300, NULL, NULL);		
 	
 	// hide plate as well
+	tween_killTweensOf(env->plate);	
 	tween_create(env->plate, 320, env->plate->y + 360, 1, 1, 0, 500, 2300, NULL, NULL);		
 
 	// hide arm
@@ -454,10 +561,26 @@ void game_finishGame()
 	while (it)
 	{	
 		curr = (sprite*)(it->value);
+		tween_killTweensOf(curr);	
 		tween_create(curr, curr->x, curr->y + 220, 1, 1, 0, 300, 2300, NULL, NULL);	
 	
 		it = it->next;
 	}
+
+	// hide clouds
+	it = g->clouds;
+	int delay = 0;
+
+	while (it)
+	{
+		curr = (sprite*)(it->value);
+			
+		tween_killTweensOf(curr);	
+		tween_create(curr, (curr->x > 320) ? 800 : -180, curr->y, 1, 1, 0, 300, 2300 + delay, &backIn, NULL);
+		delay += 50;
+		it = it->next;
+	}
+
 
 	// tween bg
 	
@@ -573,8 +696,8 @@ void game_free()
 	engine_removeEntity((entity*)(env->gameover));
 	sprite_free(env->gameover);
 	
-	engine_removeEntity((entity*)(env->aboutScreen));
-	sprite_free(env->aboutScreen);
+	engine_removeEntity((entity*)(env->tutorial));
+	sprite_free(env->tutorial);
 	
 	engine_removeEntity((entity*)(env->arm));
 	sprite_free(env->arm);

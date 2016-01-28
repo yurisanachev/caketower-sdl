@@ -15,4 +15,5 @@ int list_length(list_t* head);
 void list_add_front(list_t** head, void* data);
 void list_add_back(list_t** head, void* data);
 void list_remove(list_t** head, void* data);
+void* list_shift(list_t** head);
 #endif

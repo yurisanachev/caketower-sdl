@@ -3,13 +3,15 @@
 
 #include <SDL.h>
 #include "sprite.h"
+#include "textfield.h"
+
 #include "list.h"
 
 // buttons
 typedef struct {
 	sprite* play;
-	sprite* exit;
 	sprite* about;
+	sprite* sound;
 } game_buttons;
 
 extern game_buttons* b;
@@ -28,6 +30,8 @@ typedef struct {
 	sprite* gameover;
 	sprite* aboutScreen;
 	sprite* timeup;
+	
+	textfield* timeField;
 } game_environment;
 
 extern game_environment* env;
@@ -40,7 +44,7 @@ typedef struct {
 	int score;
 	double speed;
 	int dir;
-	int lastCakeY;
+	int dt;
 	int cakesAvailable;
 	int cakeAmount;
 	int cakeSize;

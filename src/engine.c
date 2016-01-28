@@ -1,5 +1,6 @@
 #include "engine.h"
 #include "sprite.h"
+#include "textfield.h"
 #include "assets.h"
 #include "game.h"
 #include "tween.h"
@@ -12,15 +13,21 @@ SDL_Renderer* ren = NULL;
 
 list_t* entities = NULL;
 
-void engine_addEntity(void* data)
+void engine_addEntity(entity* data)
 {
-	list_add_back(&entities, data);
+	list_add_back(&entities, (void*)data);
 }
 
-void engine_removeEntity(void* data)
+void engine_removeEntity(entity* data)
 {
-	list_remove(&entities, data);
+	list_remove(&entities, (void*)data);
 	tween_killTweensOf(data);
+}
+
+void engine_setEntityPosition(entity* data, int x, int y)
+{
+	data->x = x;
+	data->y = y;
 }
 
 int engine_init(char* name, int width, int height)
@@ -77,7 +84,6 @@ int engine_init(char* name, int width, int height)
 	assets_loadTexture("tutorial", "../assets/tutorial.png", ren);
 	assets_loadTexture("about_screen", "../assets/about_screen.png", ren);
 	
-	assets_loadTexture("exit", "../assets/exit_button.png", ren);
 	assets_loadTexture("about", "../assets/about_button.png", ren);
 	assets_loadTexture("sound", "../assets/sound_button.png", ren);
 	assets_loadTexture("play", "../assets/play_button.png", ren);
@@ -102,8 +108,10 @@ int engine_handleEvent(SDL_Event* e)
 		list_t* it = entities;
 		while (it)
 		{
-			if (sprite_handleMouse((sprite*)(it->value), e)) return 1;
-		
+			if (((entity*)(it->value))->t == SPRITE) 
+			{
+				if (sprite_handleMouse((sprite*)(it->value), e)) return 1;
+			}
 			it = it->next;
 		}
 	}
@@ -136,10 +144,13 @@ void engine_draw()
 	
 	// draw stuff
 	list_t* it = entities;
+	entity* e;
 
 	while (it)
 	{
-		sprite_draw((sprite*)(it->value));
+		e = (entity*)(it->value);
+		if (e->t == SPRITE) sprite_draw((sprite*)e);
+		if (e->t == TEXTFIELD) textfield_draw((textfield*)e);
 
 		it = it->next;
 	}

@@ -3,6 +3,8 @@
 #include "engine.h"	
 #include "tween.h"
 
+#define CAKE_MAX_Y 550
+
 game_buttons* b = NULL;
 game_environment* env = NULL;
 game* g = NULL;
@@ -15,12 +17,12 @@ void game_reset()
 	g->score = 0;
 	g->speed = 5;
 	g->dir = 1;
-	g->lastCakeY = 550;
+	g->dt = 0;
 	g->cakesAvailable = 5;
 	g->cakeAmount = 6;
 	g->cakeSize = 80;
 	g->dropSpeed = 0;
-	g->timeLeft = 100;
+	g->timeLeft = 5;
 
 
 	// clear all cakes to drop
@@ -28,7 +30,7 @@ void game_reset()
 	
 	while (it)
 	{	
-		engine_removeEntity(it->value);
+		engine_removeEntity((entity*)(it->value));
 		sprite_free((sprite*)(it->value));
 		it = it->next;
 	}
@@ -41,7 +43,7 @@ void game_reset()
 	
 	while (it)
 	{	
-		engine_removeEntity(it->value);
+		engine_removeEntity((entity*)(it->value));
 		sprite_free((sprite*)(it->value));
 		it = it->next;
 	}
@@ -100,24 +102,28 @@ void game_init()
 	env->gameover = sprite_create("gameover", 1);	
 	sprite_setPosition(env->gameover, 320, -220);	
 
+	env->timeField = textfield_create("05:00", "font", "0123456789:");
+	textfield_setPosition(env->timeField, 75, 800);
+	
 	// MENU
 	
 	// play button
 	b->play = sprite_create("play", 2);
 	b->play->mouseEnabled = 1;
 	
-	engine_addEntity((void*)(env->bg1));
-	engine_addEntity((void*)(env->bg2));
-	engine_addEntity((void*)(env->baker));
-	engine_addEntity((void*)(env->logo));
-	engine_addEntity((void*)(env->table));
-	engine_addEntity((void*)(env->plate));
-	engine_addEntity((void*)(env->timeup));
-	engine_addEntity((void*)(env->gameover));
-	engine_addEntity((void*)(env->arm));
-	engine_addEntity((void*)(env->aboutScreen));
+	engine_addEntity((entity*)(env->bg1));
+	engine_addEntity((entity*)(env->bg2));
+	engine_addEntity((entity*)(env->baker));
+	engine_addEntity((entity*)(env->logo));
+	engine_addEntity((entity*)(env->table));
+	engine_addEntity((entity*)(env->plate));
+	engine_addEntity((entity*)(env->timeup));
+	engine_addEntity((entity*)(env->gameover));
+	engine_addEntity((entity*)(env->arm));
+	engine_addEntity((entity*)(env->aboutScreen));
+	engine_addEntity((entity*)(env->timeField));
 
-	engine_addEntity((void*)(b->play));	
+	engine_addEntity((entity*)(b->play));	
 	
 
 	b->play->onMouseDown = &callback_buttonDownDefault;	
@@ -133,10 +139,8 @@ int game_handleEvent(SDL_Event* e)
 	{
 		if (e->type == SDL_MOUSEBUTTONDOWN && e->button.button == SDL_BUTTON_LEFT)  
 		{
-			// handle click somehow
-			//game_finishGame();
+			// drop cake!	
 			g->dropping = 1;
-			//g->lastCakeY -= g->cakeSize;
 			g->dropSpeed = 7;
 		}
 	}
@@ -153,9 +157,13 @@ void game_showGame()
 	// reset plate
 	sprite_setPosition(env->plate, 940, 635);
 
-	// TODO: on Complete launch gameplay!!!!
-	tween_create(env->plate, 320, env->plate->y, 1, 1, 0, 500, 500, NULL, &game_startGame);
+	// on Complete launch gameplay!!!!
+	tween_create((entity*)(env->plate), 320, env->plate->y, 1, 1, 0, 500, 500, NULL, &game_startGame);
 
+
+	// time field
+	engine_setEntityPosition((entity*)(env->timeField), 75, 800);
+	tween_create((entity*)(env->timeField), 75, 650, 1, 1, 0, 500, 700, NULL, NULL);
 
 	// config table
 			
@@ -170,24 +178,37 @@ void game_startGame()
 
 void game_update()
 {
-	
+	char* timeText = malloc(sizeof(char) * 5);
+		if (g->gameOver == 0) sprintf(timeText, "%02d:%02d", g->timeLeft, 60 - g->dt);
+		else sprintf(timeText, "00:00");
+		textfield_setText(env->timeField, timeText);
+		free(timeText);   
+ 
+
 	if (g->playing)
 	{
-		// update time left
-		if (g->timeLeft > -1)
+		if (g->dt == 60)
 		{
-			g->timeLeft--;
+			g->dt = 0;
 			
-			if (g->timeLeft == -1)
+			// update time left
+			if (g->timeLeft > -1)
 			{
-				g->gameOver = 1;
-				if (g->dropping == 0)
+				g->timeLeft--;
+				
+				if (g->timeLeft == -1)
 				{
-					game_finishGame();
+					g->gameOver = 1;
+					
+					if (g->dropping == 0)
+					{
+						game_finishGame();
+					}
 				}
 			}
 		}
-		
+
+		g->dt++;
 
 		if (g->dropping == 0 && g->gameOver == 0)
 		{
@@ -218,7 +239,7 @@ void game_update()
 			{
 				sprite* c = (sprite*)(it->value);	
 			
-				if (c->y == g->lastCakeY)
+				if (c->y == CAKE_MAX_Y)
 				{
 					g->dropping = 0;
 				
@@ -226,9 +247,9 @@ void game_update()
 					break;
 				}
 
-				if (g->lastCakeY - c->y < g->dropSpeed)
+				if (CAKE_MAX_Y - c->y < g->dropSpeed)
 				{
-					c->y = g->lastCakeY;
+					c->y = CAKE_MAX_Y;
 				} else {
 					c->y += g->dropSpeed;
 				}
@@ -274,7 +295,7 @@ void game_makeNewCake()
 			{
 				// just remove those cakes
 				list_remove(&(g->cakes), (void*)c);
-				engine_removeEntity(c);	
+				engine_removeEntity((entity*)c);	
 				sprite_free(c);
 	
 			} else {
@@ -319,7 +340,7 @@ void game_makeNewCake()
 		sprite_setPosition(c, startX + i * g->cakeSize, env->arm->y + 90);
 
 		list_add_back(&(g->cakesToDrop), c);
-		engine_addEntity(c);
+		engine_addEntity((entity*)c);
 	}
 
 	if (g->gameOver) game_finishGame();
@@ -367,6 +388,11 @@ void game_finishGame()
 
 	// hide arm
 	tween_create(env->arm, env->arm->x, -180, 1, 1, 0, 300, 0, NULL, NULL);
+
+	// hide time txt
+	tween_create(env->timeField, env->timeField->x, 800, 1, 1, 0, 500, 200, NULL, NULL);
+	
+
 
 	// hide available cakes
 	list_t* it = g->cakesToDrop;
@@ -472,7 +498,7 @@ void game_free()
 
 	// destroy buttons
 	
-	engine_removeEntity((void*)(b->play));
+	engine_removeEntity((entity*)(b->play));
 	sprite_free(b->play);
 	
 
@@ -482,39 +508,40 @@ void game_free()
 	// destroy environment
 	
 
-	engine_removeEntity((void*)(env->bg1));
+	engine_removeEntity((entity*)(env->bg1));
 	sprite_free(env->bg1);
 	
-	engine_removeEntity((void*)(env->bg2));
+	engine_removeEntity((entity*)(env->bg2));
 	sprite_free(env->bg2);
 	
-	engine_removeEntity((void*)(env->baker));
+	engine_removeEntity((entity*)(env->baker));
 	sprite_free(env->baker);
 	
-	engine_removeEntity((void*)(env->plate));
+	engine_removeEntity((entity*)(env->plate));
 	sprite_free(env->plate);
 	
-	engine_removeEntity((void*)(env->logo));
+	engine_removeEntity((entity*)(env->logo));
 	sprite_free(env->logo);
 	
-	engine_removeEntity((void*)(env->table));
+	engine_removeEntity((entity*)(env->table));
 	sprite_free(env->table);
 	
-	engine_removeEntity((void*)(env->timeup));
+	engine_removeEntity((entity*)(env->timeup));
 	sprite_free(env->timeup);
 	
-	engine_removeEntity((void*)(env->gameover));
+	engine_removeEntity((entity*)(env->gameover));
 	sprite_free(env->gameover);
 	
-	engine_removeEntity((void*)(env->aboutScreen));
+	engine_removeEntity((entity*)(env->aboutScreen));
 	sprite_free(env->aboutScreen);
 	
-	engine_removeEntity((void*)(env->arm));
+	engine_removeEntity((entity*)(env->arm));
 	sprite_free(env->arm);
 
-
+	engine_removeEntity((entity*)(env->timeField));
+	textfield_free(env->timeField);
+	
 	free(env);
 
 	free(g);
 }
-// do smth here

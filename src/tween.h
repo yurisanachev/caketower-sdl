@@ -4,6 +4,7 @@
 #include <SDL.h>
 #include "sprite.h"
 #include "list.h"
+#include "engine.h"
 
 typedef struct {
 	int dx;
@@ -19,14 +20,14 @@ typedef struct {
 	int time;
 	int delay;
 	int elapsed;
-	sprite* obj;
+	entity* obj;
 	double (*easing)(double);
 	void (*onComplete)();
 } tween;
 
 extern list_t* tweens;
 
-void tween_create(sprite* obj,
+void tween_create(entity* obj,
 		int dx, 
 		int dy, 
 		double dSX, 
@@ -37,7 +38,7 @@ void tween_create(sprite* obj,
 		double (*easing)(double),
 		void (*onComplete)());
 
-void tween_killTweensOf(void*);
+void tween_killTweensOf(entity*);
 void tween_update(tween* t);
 void tween_destroy(tween* t);
 #endif

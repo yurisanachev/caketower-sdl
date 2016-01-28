@@ -2,8 +2,10 @@
 #define _SPRITE_H_
 
 #include <SDL.h>
+#include "engine.h"
 
 typedef struct {
+	int t;
 	int x;
 	int y;
 	int width;

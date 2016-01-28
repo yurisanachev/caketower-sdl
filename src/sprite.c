@@ -1,7 +1,6 @@
 #include "sprite.h"
 #include "assets.h"
 #include <stdio.h>
-#include "engine.h"
 
 void sprite_free(sprite* s)
 {
@@ -15,6 +14,8 @@ void sprite_free(sprite* s)
 sprite* sprite_create(char* name, int frames)
 {
     sprite* s = (sprite*)malloc(sizeof(sprite));
+
+	s->t = SPRITE;
 
     s->x = 0;
     s->y = 0;
@@ -40,8 +41,7 @@ sprite* sprite_create(char* name, int frames)
 
 void sprite_setPosition(sprite* s, int x, int y)
 {
-	s->x = x;
-	s->y = y;
+	engine_setEntityPosition((entity*)s, x, y);
 }
 
 int sprite_handleMouse(sprite* s, SDL_Event* e)

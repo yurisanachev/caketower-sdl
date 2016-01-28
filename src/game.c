@@ -2,6 +2,7 @@
 #include "callbacks.h"
 #include "engine.h"	
 #include "tween.h"
+#include <math.h>
 
 #define CAKE_MAX_Y 550
 #define DEADLINE_TIME 10
@@ -21,9 +22,10 @@ void game_reset()
 	g->dt = 0;
 	g->cakesAvailable = 5;
 	g->cakeAmount = 6;
+	g->prevCakeAmount = 6;
 	g->cakeSize = 80;
 	g->dropSpeed = 0;
-	g->timeLeft = 50;
+	g->timeLeft = 59;
 	g->totalHeight = 0;
 
 	// clear all cakes to drop
@@ -304,10 +306,16 @@ void game_update()
             env->arm->x += g->dir * g->speed;
 			
 			list_t* it = g->cakesToDrop;
+			int pos = -(g->cakeAmount - 1) / 2 * g->cakeSize;
+			
+			if (g->cakeAmount % 2 == 0) pos = -g->cakeSize * (g->cakeAmount / 2 - 1) - g->cakeSize / 2;
+			
+			pos += 30;
 
 			while (it)
 			{
-				((sprite*)(it->value))->x += g->dir * g->speed;
+				((sprite*)(it->value))->x = env->arm->x + pos;
+				pos += g->cakeSize;
 				it = it->next;
 			}			
 
@@ -346,9 +354,34 @@ void game_update()
 			}
 
 			g->dropSpeed++;	
-		}	
+		}
+		
+			
 	}		
+	
+	// update falling guys here
+	list_t* it = g->falling;
+	list_t* safe;	
+	sprite* c;
+	
+	while (it)
+	{
+		c = (sprite*)(it->value);
+		safe = it->next;
 
+		if (c->y > 800)
+		{
+			// delete me!
+			list_remove(&(g->falling), (void*)c);
+			engine_removeEntity((entity*)c);	
+			sprite_free(c);
+
+		} else {
+			c->y += g->dropSpeed;
+		}			
+
+		it = safe;
+	}
 }
 
 void game_makeNewCake()
@@ -369,11 +402,12 @@ void game_makeNewCake()
 		g->totalHeight++;	
 
 			
+		g->prevCakeAmount = g->cakeAmount;
 
 		g->score += 70 * g->cakeAmount * g->speed;
 
 
-		if (g->cakesAvailable < 11 && g->score > 60000 * (g->cakesAvailable - 4))
+		if (g->cakesAvailable < 11 && g->totalHeight % 15 == 0)
 		{
 			g->cakesAvailable++;
 		}
@@ -441,6 +475,8 @@ void game_makeNewCake()
 	for (int i = 0; i < g->cakeAmount; i++)
 	{
 		sprite* c = sprite_create("cake", 11);
+
+		c->currentFrame = rand() % g->cakesAvailable + 1;
 	
 		if (g->cakeAmount % 2 != 0) startX = env->arm->x - (g->cakeAmount - 1) / 2 * g->cakeSize;
 		else startX = env->arm->x - g->cakeSize / 2 - (g->cakeAmount / 2 - 1) * g->cakeSize;
@@ -488,9 +524,50 @@ void game_makeNewCake()
 void game_makeFallCheck()
 {
 	int len = list_length(g->cakes);
+		
+	list_t* it = g->cakes;	
+	sprite* c;
 	
-	//int leftCheck = len > 0 ? 	
+	int leftCheck = 80;
+	int rightCheck = 560;
+
+	if (len > 0)
+	{	
+		c = (sprite*)(list_get(g->cakes, len - 1));
+		rightCheck = c->x;
+
+		c = (sprite*)(list_get(g->cakes, len - g->prevCakeAmount));
+		leftCheck = c->x;
+	}
 	
+	it = g->cakesToDrop;
+
+	len = list_length(g->cakesToDrop);
+	int fallen = 0;
+
+	while (it)
+	{
+		c = (sprite*)(it->value);		
+		list_t* safe = it->next;
+		
+		if ((leftCheck - c->x) > g->cakeSize || (c->x - rightCheck) > g->cakeSize)
+		{
+			fallen++;	
+			
+			list_remove(&(g->cakesToDrop), (void*)c);
+			list_add_back(&(g->falling), (void*)c);
+		}
+
+		it = safe;
+	}	
+
+	if (len == fallen) 
+	{
+		// missed all cakes! :)	
+	} else
+	{
+		g->cakeAmount -= fallen;
+	}
 }
 
 void game_finishGame()
@@ -586,8 +663,15 @@ void game_finishGame()
 	
 	tween_create(env->bg2, 320, env->bg2->y + 160, 1, 1, 0, 500, 2400, &expoOut, NULL);		
 
+	// score field
+	engine_setEntityPosition((entity*)(env->scoreField), 225, -200);
+	tween_create(env->scoreField, env->scoreField->x, 370, 1, 1, 0, 1000, 2700, &elasticOut, NULL);
+	
 	// tween gameover
-	tween_create(env->gameover, 320, 300, 1, 1, 0, 1000, 2800, &elasticOut, &game_hideGame);
+	tween_create(env->gameover, 320, 350, 1, 1, 0, 1000, 2800, &elasticOut, NULL);
+
+	// delay
+	tween_create(env->bg1, env->bg1->x, env->bg1->y, 1, 1, 0, 1000, 5000, NULL, &game_hideGame);
 }
 
 void game_hideGame()
@@ -598,6 +682,8 @@ void game_hideGame()
 	tween_create(env->gameover, 320, -220, 1, 1, 0, 500, 0, &backIn, NULL);
 	
 
+	// score field
+	tween_create(env->scoreField, env->scoreField->x, -200, 1, 1, 0, 500, 100, &backIn, NULL);
 	
 	// reset stats
 	game_reset();

@@ -14,6 +14,7 @@ typedef struct {
 	SDL_Texture* tex;
 	char* text;
 	char* chars;
+	int visible;
 } textfield;
 
 void textfield_free(textfield* t);

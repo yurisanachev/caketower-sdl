@@ -16,6 +16,7 @@ typedef struct {
 	int currentFrame;
 	int mouseDown;
 	int mouseEnabled;
+	int visible;
 	SDL_Texture* tex;
 
 	// event handlers

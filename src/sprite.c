@@ -24,7 +24,7 @@ sprite* sprite_create(char* name, int frames)
     s->rotation = 0;
     s->currentFrame = 1;
 	s->mouseDown = 0;
-	
+	s->visible = 1;	
 	s->mouseEnabled = 0;
 
     s->tex = assets_getTexture(name);
@@ -46,7 +46,7 @@ void sprite_setPosition(sprite* s, int x, int y)
 
 int sprite_handleMouse(sprite* s, SDL_Event* e)
 {
-	if (s->mouseEnabled == 0) return 0;
+	if (s->mouseEnabled == 0 || s->visible == 0) return 0;
 	// mouse
 	SDL_Rect m;
 	SDL_GetMouseState(&m.x, &m.y);
@@ -96,6 +96,8 @@ int sprite_handleMouse(sprite* s, SDL_Event* e)
 
 void sprite_draw(sprite* s)
 {
+		if (s->visible == 0) return;
+		
         SDL_Rect dst;
         dst.w = s->width * s->scaleX;
         dst.h = s->height * s->scaleY;

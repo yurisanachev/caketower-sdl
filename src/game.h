@@ -30,8 +30,10 @@ typedef struct {
 	sprite* gameover;
 	sprite* aboutScreen;
 	sprite* timeup;
+	sprite* clock;
 	
 	textfield* timeField;
+	textfield* scoreField;
 } game_environment;
 
 extern game_environment* env;

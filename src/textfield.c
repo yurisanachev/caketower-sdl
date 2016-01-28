@@ -14,7 +14,7 @@ textfield* textfield_create(char* text, char* font, char* chars)
 	textfield* t = (textfield*)malloc(sizeof(textfield));
 
     t->t = TEXTFIELD;
-
+	t->visible = 1;
     t->x = 0;
     t->y = 0;
 
@@ -42,6 +42,8 @@ void textfield_setPosition(textfield* t, int x, int y)
 
 void textfield_draw(textfield* t)
 {
+	if (t->visible == 0) return;
+		
 	size_t pos = 0;
 	int charIndex;        
 
@@ -54,8 +56,8 @@ void textfield_draw(textfield* t)
 			SDL_Rect dst;
 	        dst.w = t->width;
 	        dst.h = t->height;
-			dst.x = t->x - dst.w / 2 + pos * t->width * 0.8;
-	        dst.y = t->y - dst.h / 2;
+			dst.x = t->x - t->width / 2 + pos * t->width * 0.8;
+	        dst.y = t->y - t->height / 2;
 	        
 	        SDL_Rect src;
 	        src.x = t->width * charIndex;

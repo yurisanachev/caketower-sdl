@@ -4,6 +4,7 @@
 #include "tween.h"
 
 #define CAKE_MAX_Y 550
+#define DEADLINE_TIME 3
 
 game_buttons* b = NULL;
 game_environment* env = NULL;
@@ -93,6 +94,10 @@ void game_init()
 	env->arm = sprite_create("arm", 1);
 	sprite_setPosition(env->arm, 0, -180);
 
+	
+	// clock
+	env->clock = sprite_create("clock", 1);
+	sprite_setPosition(env->clock, 40, 800);
 
 	// aboutScreen
 	env->aboutScreen = sprite_create("about_screen", 1);
@@ -102,9 +107,15 @@ void game_init()
 	env->gameover = sprite_create("gameover", 1);	
 	sprite_setPosition(env->gameover, 320, -220);	
 
+	// time remaining field
 	env->timeField = textfield_create("05:00", "font", "0123456789:");
 	textfield_setPosition(env->timeField, 75, 800);
-	
+
+	// score field	
+	env->scoreField = textfield_create("000000", "font", "0123456789:");
+	textfield_setPosition(env->scoreField, 450, 800);
+
+
 	// MENU
 	
 	// play button
@@ -119,9 +130,11 @@ void game_init()
 	engine_addEntity((entity*)(env->plate));
 	engine_addEntity((entity*)(env->timeup));
 	engine_addEntity((entity*)(env->gameover));
+	engine_addEntity((entity*)(env->clock));
 	engine_addEntity((entity*)(env->arm));
 	engine_addEntity((entity*)(env->aboutScreen));
 	engine_addEntity((entity*)(env->timeField));
+	engine_addEntity((entity*)(env->scoreField));
 
 	engine_addEntity((entity*)(b->play));	
 	
@@ -160,10 +173,23 @@ void game_showGame()
 	// on Complete launch gameplay!!!!
 	tween_create((entity*)(env->plate), 320, env->plate->y, 1, 1, 0, 500, 500, NULL, &game_startGame);
 
-
+	// clock icon
+	sprite_setPosition(env->clock, 40, 800);
+	tween_create((entity*)(env->clock), 35, 680, 1, 1, 0, 500, 600, NULL, NULL);	
+	
 	// time field
 	engine_setEntityPosition((entity*)(env->timeField), 75, 800);
-	tween_create((entity*)(env->timeField), 75, 650, 1, 1, 0, 500, 700, NULL, NULL);
+	tween_create((entity*)(env->timeField), 80, 680, 1, 1, 0, 500, 700, NULL, NULL);
+
+
+	// score field
+	engine_setEntityPosition((entity*)(env->scoreField), 450, 800);
+	tween_create((entity*)(env->scoreField), 445, 680, 1, 1, 0, 500, 800, NULL, NULL);
+
+
+	// make them visible
+	env->timeField->visible = 1;
+	env->clock->visible = 1;	
 
 	// config table
 			
@@ -209,6 +235,17 @@ void game_update()
 		}
 
 		g->dt++;
+
+		if (g->timeLeft < DEADLINE_TIME && g->dt % 15 == 0)
+		{
+			
+			env->timeField->visible = !env->timeField->visible;			
+			env->clock->visible = !env->clock->visible;			
+
+		}
+
+
+
 
 		if (g->dropping == 0 && g->gameOver == 0)
 		{
@@ -390,9 +427,13 @@ void game_finishGame()
 	tween_create(env->arm, env->arm->x, -180, 1, 1, 0, 300, 0, NULL, NULL);
 
 	// hide time txt
-	tween_create(env->timeField, env->timeField->x, 800, 1, 1, 0, 500, 200, NULL, NULL);
+	tween_create(env->timeField, env->timeField->x, 800, 1, 1, 0, 500, 200, &backIn, NULL);
 	
+	// hide score txt
+	tween_create(env->scoreField, env->scoreField->x, 800, 1, 1, 0, 500, 100, &backIn, NULL);
 
+	// clock icon
+	tween_create((entity*)(env->clock), env->clock->x, 800, 1, 1, 0, 500, 300, &backIn, NULL);	
 
 	// hide available cakes
 	list_t* it = g->cakesToDrop;
@@ -538,8 +579,14 @@ void game_free()
 	engine_removeEntity((entity*)(env->arm));
 	sprite_free(env->arm);
 
+	engine_removeEntity((entity*)(env->clock));
+	sprite_free(env->clock);
+	
 	engine_removeEntity((entity*)(env->timeField));
 	textfield_free(env->timeField);
+	
+	engine_removeEntity((entity*)(env->scoreField));
+	textfield_free(env->scoreField);
 	
 	free(env);
 

@@ -387,7 +387,7 @@ void game_makeNewCake()
 		g->score += 70 * g->cakeAmount * g->speed;
 
 
-		if (g->cakesAvailable < 11 && g->totalHeight % 10 == 0)
+		if (g->cakesAvailable < 11 && g->totalHeight % 8 == 0)
 		{
 			g->cakesAvailable++;
 		}
@@ -493,7 +493,6 @@ void game_makeNewCake()
 			it = it->next;
 		}
 	}
-
 
 	if (g->gameOver) 
 	{

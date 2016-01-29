@@ -1,5 +1,7 @@
 # Cake Tower SDL
-Native C + SDL port of my old HTML5 game Cake Tower
+Native port of my old HTML5 game Cake Tower
+
+tools - vim + sdl + c
 
 ###web version available at:
 http://www.agame.com/game/cake-tower

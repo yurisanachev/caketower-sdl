@@ -7,17 +7,22 @@
 #include "tween.h"
 #include "easing.h"
 
-void callback_removeShout(entity* sender)
+void callback_tweenDown(entity* sender);
+
+void callback_tweenUp(entity* sender)
 {
-	// remove meee!
-	engine_removeEntity(sender);
-	sprite_free((sprite*)sender);
+	tween_create(sender, sender->x, sender->y + 5, 1.2, 1, 0, 500, 0, &backIn, &callback_tweenDown);	
 }
 
+void callback_tweenDown(entity* sender)
+{
+	tween_create(sender, sender->x, sender->y - 5, 1, 1, 0, 500, 0, &backOut, &callback_tweenUp);	
+}
 
 void callback_startGameFromMenu(entity* sender)
 {
 	// do smth
+	tween_killTweensOf(sender);
 	game_hideMenu();
 	game_showGame();
 }

@@ -217,7 +217,6 @@ void game_showGame()
 void game_startGame(entity* sender)
 {
 	g->playing = 1;
-
 	game_makeNewCake();
 }
 
@@ -786,7 +785,7 @@ void game_showMenu()
 	// play button
 	sprite_setPosition(b->play, 425, 870);
 
-	tween_create((entity*)(b->play), b->play->x, 395, 1, 1, 0, 500, 600, &backOut, NULL);
+	tween_create((entity*)(b->play), b->play->x, 395, 1, 1, 0, 500, 600, &backOut, &callback_tweenUp);
 
 	// plate	
 	sprite_setPosition(env->plate, 940, 635);

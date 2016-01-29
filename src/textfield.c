@@ -5,6 +5,7 @@
 
 void textfield_free(textfield* t)
 {
+	free(t->text);
     t->tex = NULL;
     free(t);
 }
@@ -12,6 +13,8 @@ void textfield_free(textfield* t)
 textfield* textfield_create(char* text, char* font, char* chars)
 {
 	textfield* t = (textfield*)malloc(sizeof(textfield));
+
+	t->text = NULL;
 
     t->t = TEXTFIELD;
 	t->visible = 1;
@@ -23,7 +26,9 @@ textfield* textfield_create(char* text, char* font, char* chars)
 	SDL_QueryTexture(t->tex, NULL, NULL, &(t->width), &(t->height));
 
 	t->width /= strlen(chars);
-	t->text = text;
+
+	textfield_setText(t, text);
+	
 	t->chars = chars;	
 
     return t;
@@ -31,7 +36,9 @@ textfield* textfield_create(char* text, char* font, char* chars)
 
 void textfield_setText(textfield* t, char* text)
 {
-	t->text = text;
+	t->text = realloc(t->text, sizeof(char) * strlen(text));
+
+	strcpy(t->text, text);
 }
 
 void textfield_setPosition(textfield* t, int x, int y)

@@ -69,7 +69,7 @@ int sprite_handleMouse(sprite* s, SDL_Event* e)
 			if (inside)
 			{
 				// handle onMouseDown
-				if (s->onMouseDown != NULL) s->onMouseDown(s);
+				if (s->onMouseDown != NULL) s->onMouseDown((entity*)s);
 				s->mouseDown = 1;
 				
 				return 1;
@@ -80,12 +80,12 @@ int sprite_handleMouse(sprite* s, SDL_Event* e)
 			if (inside && s->mouseDown)
 			{
 				// click
-				if (s->onClick != NULL) s->onClick(s);
+				if (s->onClick != NULL) s->onClick((entity*)s);
 			}
 			if (s->mouseDown)
 			{
 				// reset
-				if (s->onMouseUp != NULL) s->onMouseUp(s);
+				if (s->onMouseUp != NULL) s->onMouseUp((entity*)s);
 				s->mouseDown = 0;
 			}
 			break;

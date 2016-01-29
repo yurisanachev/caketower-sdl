@@ -57,6 +57,7 @@ typedef struct {
 	list_t* cakes; 
 	list_t* falling; 
 	list_t* clouds; 
+	list_t* shouts; 
 } game;
 
 extern game* g;
@@ -64,14 +65,15 @@ extern game* g;
 void game_freeSpriteList(list_t**);
 
 void game_addCloud();
+void game_addShout();
 
 void game_showMenu();
 void game_hideMenu();
 
 void game_showGame();
-void game_startGame();
+void game_startGame(entity* sender);
 void game_finishGame();
-void game_hideGame();
+void game_hideGame(entity* sender);
 
 void game_reset();
 

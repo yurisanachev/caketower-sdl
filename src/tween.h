@@ -22,7 +22,7 @@ typedef struct {
 	int elapsed;
 	entity* obj;
 	double (*easing)(double);
-	void (*onComplete)();
+	void (*onComplete)(entity*);
 } tween;
 
 extern list_t* tweens;
@@ -36,7 +36,7 @@ void tween_create(entity* obj,
 		int time,
 		int delay,
 		double (*easing)(double),
-		void (*onComplete)());
+		void (*onComplete)(entity*));
 
 void tween_killTweensOf(entity*);
 void tween_update(tween* t);

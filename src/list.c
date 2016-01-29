@@ -99,9 +99,9 @@ void list_free(list_t** head)
 	*head = NULL;
 }
 
-int list_length(list_t* head)
+size_t list_length(list_t* head)
 {
-	int c = 0;
+	size_t c = 0;
 	while (head)
 	{
 		head = head->next;

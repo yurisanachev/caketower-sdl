@@ -39,6 +39,9 @@ void game_reset()
 	
 	// clear clouds
 	game_freeSpriteList(&(g->clouds));
+	
+	// clear shouts
+	game_freeSpriteList(&(g->shouts));
 }
 
 void game_freeSpriteList(list_t** head)
@@ -56,32 +59,6 @@ void game_freeSpriteList(list_t** head)
 	
 }
 
-void game_addCloud()
-{
-	int len = list_length(g->clouds);
-	sprite* cloud = (len > 8) ? (sprite*)(list_shift(&(g->clouds))) : sprite_create("clouds", 6);
-
-	if (len <= 8) engine_addEntity((entity*)cloud);
-	
-	cloud->currentFrame = rand() % 6 + 1;	
-	cloud->scaleX = cloud->scaleY = rand() % 10 > 5 ? 1 : 1.3;	
-	
-	cloud->y = -80 - rand() % 30;
-
-	len = list_length(g->clouds);
-	
-	if (len == 0 || ((sprite*)(list_get(g->clouds, len - 1)))->x < 320)
-	{
-		cloud->x = rand() % 100 + 490;
-	} else
-	{	
-		cloud->x = rand() % 100 + 75;
-	} 
-
-	list_add_back(&(g->clouds), (void*)cloud);
-	
-}
-
 void game_init()
 {
 	// create containers
@@ -92,6 +69,7 @@ void game_init()
 	g->cakes = NULL;
 	g->falling = NULL;
 	g->clouds = NULL;
+	g->shouts = NULL;
 
 	env = (game_environment*)malloc(sizeof(game_environment));
 
@@ -236,7 +214,7 @@ void game_showGame()
 			
 }
 
-void game_startGame()
+void game_startGame(entity* sender)
 {
 	g->playing = 1;
 
@@ -251,7 +229,7 @@ void game_update()
 	if (g->gameOver == 0) sprintf(timeText, "%02d:%02d", g->timeLeft, 60 - g->dt);
 	else sprintf(timeText, "00:00");
 	textfield_setText(env->timeField, timeText);
-	//free(timeText);   
+	free(timeText);   
  
 
 	if (g->playing)
@@ -285,13 +263,16 @@ void game_update()
 			env->timeField->visible = !env->timeField->visible;			
 			env->clock->visible = !env->clock->visible;			
 
+		} else if (g->timeLeft > DEADLINE_TIME)
+		{
+			env->timeField->visible = env->clock->visible = 1;
 		}
 
 		// update score
 		char* scoreText = malloc(sizeof(char) * 7);
 		sprintf(scoreText, "%07d", g->score);
 		textfield_setText(env->scoreField, scoreText);
-		//free(scoreText);   
+		free(scoreText);   
 
 
 
@@ -407,7 +388,7 @@ void game_makeNewCake()
 		g->score += 70 * g->cakeAmount * g->speed;
 
 
-		if (g->cakesAvailable < 11 && g->totalHeight % 15 == 0)
+		if (g->cakesAvailable < 11 && g->totalHeight % 10 == 0)
 		{
 			g->cakesAvailable++;
 		}
@@ -430,7 +411,7 @@ void game_makeNewCake()
 				sprite_free(c);
 	
 			} else {
-				tween_create(c, c->x, c->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+				tween_create((entity*)c, c->x, c->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
 			}
 
 			it = safe;
@@ -441,15 +422,15 @@ void game_makeNewCake()
 		while (it)
 		{
 			sprite* c = (sprite*)(it->value);
-			tween_create(c, c->x, c->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+			tween_create((entity*)c, c->x, c->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
 			
 			list_add_back(&(g->cakes), it->value);	
 			it = it->next;
 		}	
 		
-		tween_create(env->plate, 320, env->plate->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
-		tween_create(env->table, 320, env->table->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
-		tween_create(env->bg2, 320, env->bg2->y + g->cakeSize / 8, 1, 1, 0, 300, 0, NULL, NULL);
+		tween_create((entity*)(env->plate), 320, env->plate->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+		tween_create((entity*)(env->table), 320, env->table->y + g->cakeSize, 1, 1, 0, 500, 0, &backOut, NULL);
+		tween_create((entity*)(env->bg2), 320, env->bg2->y + g->cakeSize / 8, 1, 1, 0, 300, 0, NULL, NULL);
 
 		if (g->totalHeight % 7 == 0) 
 		{
@@ -509,7 +490,7 @@ void game_makeNewCake()
 				engine_addEntity((entity*)cloud);
 			}
 	
-			tween_create(cloud, cloud->x, cloud->y + g->cakeSize / 3, 1, 1, 0, 600, 0, &backOut, NULL);
+			tween_create((entity*)cloud, cloud->x, cloud->y + g->cakeSize / 3, 1, 1, 0, 600, 0, &backOut, NULL);
 			it = it->next;
 		}
 	}
@@ -560,6 +541,12 @@ void game_makeFallCheck()
 
 		it = safe;
 	}	
+	
+	if (fallen == 0 && len > 0 && abs(c->x - rightCheck) < 20)
+	{
+		// add shout
+		game_addShout();
+   	}
 
 	if (len == fallen) 
 	{
@@ -569,6 +556,72 @@ void game_makeFallCheck()
 		g->cakeAmount -= fallen;
 	}
 }
+
+void game_addShout()
+{
+	size_t len = list_length(g->shouts);
+	sprite* shout = (len > 5) ? (sprite*)(list_shift(&(g->shouts))) : sprite_create("shouts", 5);
+	
+	if (len <= 5) engine_addEntity((entity*)shout);
+		
+	tween_killTweensOf((entity*)shout);
+
+	shout->currentFrame = rand() % 4 + 1;
+	
+	// small chance	
+	if (rand() % 10 < 3) 
+	{
+		shout->currentFrame = 5;	
+		g->timeLeft++;
+	}
+
+	sprite_setPosition(shout, env->arm->x + rand() % 200 - 100, CAKE_MAX_Y - rand() % 100); 
+    	
+	shout->scaleX = shout->scaleY = 0;
+	
+	int angle = rand() % 10 > 5 ? -10 : 10;
+
+	tween_create((entity*)shout, shout->x, shout->y - 50, 1, 1, angle, 1000, 0, &elasticOut, NULL);
+	shout->scaleX = shout->scaleY = 1;
+	shout->rotation = angle;
+	shout->y -= 50;
+	tween_create((entity*)shout, shout->x, shout->y - 50, 0, 0, -angle, 300, 1000, &backIn, NULL);
+
+	shout->scaleX = shout->scaleY = 0;	
+	shout->y += 50;
+	shout->rotation = 0;
+
+		
+	list_add_back(&(g->shouts), (void*)shout);
+}
+
+
+void game_addCloud()
+{
+	int len = list_length(g->clouds);
+	sprite* cloud = (len > 8) ? (sprite*)(list_shift(&(g->clouds))) : sprite_create("clouds", 6);
+
+	if (len <= 8) engine_addEntity((entity*)cloud);
+	
+	cloud->currentFrame = rand() % 6 + 1;	
+	cloud->scaleX = cloud->scaleY = rand() % 10 > 5 ? 1 : 1.3;	
+	
+	cloud->y = -80 - rand() % 30;
+
+	len = list_length(g->clouds);
+	
+	if (len == 0 || ((sprite*)(list_get(g->clouds, len - 1)))->x < 320)
+	{
+		cloud->x = rand() % 100 + 490;
+	} else
+	{	
+		cloud->x = rand() % 100 + 75;
+	} 
+
+	list_add_back(&(g->clouds), (void*)cloud);
+	
+}
+
 
 void game_finishGame()
 {
@@ -585,13 +638,13 @@ void game_finishGame()
 	engine_removeEntity((entity*)(env->timeup));
 	engine_addEntity((entity*)(env->timeup));
 	
-	tween_create(env->timeup, 320, 360, 1.2, 1.2, 0, 2000,   0, &elasticOut, NULL);
+	tween_create((entity*)(env->timeup), 320, 360, 1.2, 1.2, 0, 2000,   0, &elasticOut, NULL);
 
 	env->timeup->scaleX = 1.2;
 	env->timeup->scaleY = 1.2;	
 	env->timeup->rotation = 0;	
 	
-	tween_create(env->timeup, 1000, 360, 1.2, 1.2, 0, 500, 2000,  &backIn, NULL);
+	tween_create((entity*)(env->timeup), 1000, 360, 1.2, 1.2, 0, 500, 2000,  &backIn, NULL);
 
 	env->timeup->scaleX = 0;
 	env->timeup->scaleY = 0;	
@@ -600,21 +653,21 @@ void game_finishGame()
 
 	
 	// hide table
-	tween_killTweensOf(env->table);	
-	tween_create(env->table, 320, env->table->y + 360, 1, 1, 0, 500, 2300, NULL, NULL);		
+	tween_killTweensOf((entity*)(env->table));	
+	tween_create((entity*)(env->table), 320, env->table->y + 360, 1, 1, 0, 500, 2300, NULL, NULL);		
 	
 	// hide plate as well
-	tween_killTweensOf(env->plate);	
-	tween_create(env->plate, 320, env->plate->y + 360, 1, 1, 0, 500, 2300, NULL, NULL);		
+	tween_killTweensOf((entity*)(env->plate));	
+	tween_create((entity*)(env->plate), 320, env->plate->y + 360, 1, 1, 0, 500, 2300, NULL, NULL);		
 
 	// hide arm
-	tween_create(env->arm, env->arm->x, -180, 1, 1, 0, 300, 0, NULL, NULL);
+	tween_create((entity*)(env->arm), env->arm->x, -180, 1, 1, 0, 300, 0, NULL, NULL);
 
 	// hide time txt
-	tween_create(env->timeField, env->timeField->x, 800, 1, 1, 0, 500, 200, &backIn, NULL);
+	tween_create((entity*)(env->timeField), env->timeField->x, 800, 1, 1, 0, 500, 200, &backIn, NULL);
 	
 	// hide score txt
-	tween_create(env->scoreField, env->scoreField->x, 800, 1, 1, 0, 500, 100, &backIn, NULL);
+	tween_create((entity*)(env->scoreField), env->scoreField->x, 800, 1, 1, 0, 500, 100, &backIn, NULL);
 
 	// clock icon
 	tween_create((entity*)(env->clock), env->clock->x, 800, 1, 1, 0, 500, 300, &backIn, NULL);	
@@ -626,7 +679,7 @@ void game_finishGame()
 	while (it)
 	{	
 		curr = (sprite*)(it->value);
-		tween_create(curr, curr->x, -200, 1, 1, 0, 300, 0, NULL, NULL);	
+		tween_create((entity*)curr, curr->x, -200, 1, 1, 0, 300, 0, NULL, NULL);	
 	
 		it = it->next;
 	}	
@@ -638,8 +691,8 @@ void game_finishGame()
 	while (it)
 	{	
 		curr = (sprite*)(it->value);
-		tween_killTweensOf(curr);	
-		tween_create(curr, curr->x, curr->y + 220, 1, 1, 0, 300, 2300, NULL, NULL);	
+		tween_killTweensOf((entity*)curr);	
+		tween_create((entity*)curr, curr->x, curr->y + 220, 1, 1, 0, 300, 2300, NULL, NULL);	
 	
 		it = it->next;
 	}
@@ -652,8 +705,8 @@ void game_finishGame()
 	{
 		curr = (sprite*)(it->value);
 			
-		tween_killTweensOf(curr);	
-		tween_create(curr, (curr->x > 320) ? 800 : -180, curr->y, 1, 1, 0, 300, 2300 + delay, &backIn, NULL);
+		tween_killTweensOf((entity*)curr);	
+		tween_create((entity*)curr, (curr->x > 320) ? 800 : -180, curr->y, 1, 1, 0, 300, 2300 + delay, &backIn, NULL);
 		delay += 50;
 		it = it->next;
 	}
@@ -661,29 +714,29 @@ void game_finishGame()
 
 	// tween bg
 	
-	tween_create(env->bg2, 320, env->bg2->y + 160, 1, 1, 0, 500, 2400, &expoOut, NULL);		
+	tween_create((entity*)(env->bg2), 320, env->bg2->y + 160, 1, 1, 0, 500, 2400, &expoOut, NULL);		
 
 	// score field
 	engine_setEntityPosition((entity*)(env->scoreField), 225, -200);
-	tween_create(env->scoreField, env->scoreField->x, 370, 1, 1, 0, 1000, 2700, &elasticOut, NULL);
+	tween_create((entity*)(env->scoreField), env->scoreField->x, 370, 1, 1, 0, 1000, 2700, &elasticOut, NULL);
 	
 	// tween gameover
-	tween_create(env->gameover, 320, 350, 1, 1, 0, 1000, 2800, &elasticOut, NULL);
+	tween_create((entity*)(env->gameover), 320, 350, 1, 1, 0, 1000, 2800, &elasticOut, NULL);
 
 	// delay
-	tween_create(env->bg1, env->bg1->x, env->bg1->y, 1, 1, 0, 1000, 5000, NULL, &game_hideGame);
+	tween_create((entity*)(env->bg1), env->bg1->x, env->bg1->y, 1, 1, 0, 1000, 5000, NULL, &game_hideGame);
 }
 
-void game_hideGame()
+void game_hideGame(entity* sender)
 {
 	// hide level stuff and/or gameover/pause
 	
 	// hide gameover	
-	tween_create(env->gameover, 320, -220, 1, 1, 0, 500, 0, &backIn, NULL);
+	tween_create((entity*)(env->gameover), 320, -220, 1, 1, 0, 500, 0, &backIn, NULL);
 	
 
 	// score field
-	tween_create(env->scoreField, env->scoreField->x, -200, 1, 1, 0, 500, 100, &backIn, NULL);
+	tween_create((entity*)(env->scoreField), env->scoreField->x, -200, 1, 1, 0, 500, 100, &backIn, NULL);
 	
 	// reset stats
 	game_reset();
@@ -694,46 +747,46 @@ void game_hideGame()
 
 void game_hideMenu()
 {
-	tween_create(env->bg2, env->bg2->x, env->bg2->y, 1, 1, 0, 500, 0, NULL, NULL);
+	tween_create((entity*)(env->bg2), env->bg2->x, env->bg2->y, 1, 1, 0, 500, 0, NULL, NULL);
 
 
-	tween_create(env->baker, -200, env->baker->y, 1, 1, 0.7 * 180 / M_PI, 500, 0, NULL, NULL);	
+	tween_create((entity*)(env->baker), -200, env->baker->y, 1, 1, 0.7 * 180 / M_PI, 500, 0, NULL, NULL);	
 
 	
-	tween_create(env->logo, env->logo->x, -200, 1, 1, 0, 600, 0, &backIn, NULL);
+	tween_create((entity*)(env->logo), env->logo->x, -200, 1, 1, 0, 600, 0, &backIn, NULL);
 
-	tween_create(b->play, b->play->x, 870, 1, 1, 0, 500, 0, &backIn, NULL);
+	tween_create((entity*)(b->play), b->play->x, 870, 1, 1, 0, 500, 0, &backIn, NULL);
 }
 
 void game_showMenu()
 {
 	// setup bg2
 
-	tween_create(env->bg2, 320, 426, 1.2, 1.2, 0, 500, 0, NULL, NULL);
+	tween_create((entity*)(env->bg2), 320, 426, 1.2, 1.2, 0, 500, 0, NULL, NULL);
 
 
 	// setup baker
 	sprite_setPosition(env->baker, 315, 1030);
 	env->baker->rotation = 0.7 * 180 / M_PI;
 	
-	tween_create(env->baker, env->baker->x, 466, 1, 1, 0, 500, 0, NULL, NULL);	
+	tween_create((entity*)(env->baker), env->baker->x, 466, 1, 1, 0, 500, 0, NULL, NULL);	
 
 	
 	// setup logo
 	sprite_setPosition(env->logo, 190, 150);
 	env->logo->scaleX = env->logo->scaleY = 0;
 	
-	tween_create(env->logo, env->logo->x, env->logo->y, 1, 1, 0, 600, 400, &elasticOut, NULL);
+	tween_create((entity*)(env->logo), env->logo->x, env->logo->y, 1, 1, 0, 600, 400, &elasticOut, NULL);
 
 	// table
 	sprite_setPosition(env->table, 320, 800);
-	tween_create(env->table, env->table->x, 695, 1, 1, 0, 500, 0, NULL, NULL);	
+	tween_create((entity*)(env->table), env->table->x, 695, 1, 1, 0, 500, 0, NULL, NULL);	
 
 
 	// play button
 	sprite_setPosition(b->play, 425, 870);
 
-	tween_create(b->play, b->play->x, 395, 1, 1, 0, 500, 600, &backOut, NULL);
+	tween_create((entity*)(b->play), b->play->x, 395, 1, 1, 0, 500, 600, &backOut, NULL);
 
 	// plate	
 	sprite_setPosition(env->plate, 940, 635);

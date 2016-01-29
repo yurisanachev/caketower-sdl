@@ -20,9 +20,9 @@ typedef struct {
 	SDL_Texture* tex;
 
 	// event handlers
-	void (*onMouseDown)(void*);
-	void (*onMouseUp)(void*);
-	void (*onClick)(void*);
+	void (*onMouseDown)(entity*);
+	void (*onMouseUp)(entity*);
+	void (*onClick)(entity*);
 } sprite;
 
 void sprite_free(sprite* s);

@@ -2,7 +2,6 @@
 #define _ENGINE_H_
 
 #include <SDL.h>
-#include "sprite.h"
 #include "list.h"
 
 #define SPRITE 1

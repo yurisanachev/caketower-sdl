@@ -81,11 +81,9 @@ int engine_init(char* name, int width, int height)
 	assets_loadTexture("font", "../assets/font.png", ren);
 	assets_loadTexture("clock", "../assets/clock.png", ren);
 	assets_loadTexture("clouds", "../assets/clouds.png", ren);
+	assets_loadTexture("shouts", "../assets/shouts.png", ren);
 	assets_loadTexture("tutorial", "../assets/tutorial.png", ren);
-	assets_loadTexture("about_screen", "../assets/about_screen.png", ren);
 	
-	assets_loadTexture("about", "../assets/about_button.png", ren);
-	assets_loadTexture("sound", "../assets/sound_button.png", ren);
 	assets_loadTexture("play", "../assets/play_button.png", ren);
 
 	// setup game

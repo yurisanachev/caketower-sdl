@@ -11,7 +11,7 @@ void tween_create(entity* ent,
 		int time,
 		int delay,
 		double (*easing)(double),
-		void (*onComplete)())
+		void (*onComplete)(entity*))
 {
 	tween* t = (tween*)malloc(sizeof(tween));	
 
@@ -65,7 +65,7 @@ void tween_update(tween* t)
 {
 	if (t->obj == NULL || t->elapsed == t->time)
 	{
-		if (t->onComplete != NULL) t->onComplete(); 
+		if (t->onComplete != NULL) t->onComplete(t->obj); 
 	
 		tween_destroy(t);
 
